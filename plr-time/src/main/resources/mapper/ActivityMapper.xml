@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.plume.plrtime.mapper.ActivityMapper">
+
+    <resultMap id="BaseResultMap" type="com.plume.plrtime.pojo.Activity">
+            <id property="aId" column="a_id" jdbcType="INTEGER"/>
+            <result property="tId" column="t_id" jdbcType="INTEGER"/>
+            <result property="uId" column="u_id" jdbcType="INTEGER"/>
+            <result property="aName" column="a_name" jdbcType="VARCHAR"/>
+            <result property="aDec" column="a_dec" jdbcType="VARCHAR"/>
+            <result property="aStatus" column="a_status" jdbcType="INTEGER"/>
+            <result property="aTime" column="a_time" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        a_id,t_id,u_id,
+        a_name,a_dec,a_status,
+        a_time
+    </sql>
+</mapper>

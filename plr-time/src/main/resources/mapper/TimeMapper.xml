@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.plume.plrtime.mapper.TimeMapper">
+
+    <resultMap id="BaseResultMap" type="com.plume.plrtime.pojo.Time">
+            <id property="tId" column="t_id" jdbcType="INTEGER"/>
+            <result property="uId" column="user_id" jdbcType="INTEGER"/>
+            <result property="aId" column="ac_id" jdbcType="INTEGER"/>
+            <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+            <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+            <result property="tDuration" column="t_duration" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        t_id,user_id,ac_id,
+        start_time,end_time,t_duration
+    </sql>
+</mapper>
