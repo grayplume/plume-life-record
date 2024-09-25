@@ -1,5 +1,6 @@
 package com.plume.plrtime.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.plume.plrtime.common.Constants;
 import com.plume.plrtime.common.Result;
@@ -48,6 +49,9 @@ public class TimeServiceImpl extends ServiceImpl<TimeMapper, Time>
             save = save(time);
             // 将刚保存的时间id传给前端
             map.put("tId", time.getTId());
+
+            // 更新活动TID
+            activityService.getById(activity.getAId());
             if (save){
                 activity.setTId(time.getTId());
                 activity.setAStatus(1);
@@ -92,9 +96,24 @@ public class TimeServiceImpl extends ServiceImpl<TimeMapper, Time>
                 throw new BusinessException(TimeException.ACTIVITY_RUNNING);
             }
         }
-
+        Integer count = count(aid);
         activity.setAStatus((currentStatus+1)%2);
+        activity.setATime(count);
         activityService.updateById(activity);
+    }
+
+    // 计算活动总时间
+    private Integer count(Integer aid){
+        QueryWrapper<Time> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("a_id", aid);
+        List<Time> list = list(queryWrapper);
+        int total = 0;
+        for (Time time : list) {
+            if (time.getEndTime()!=null){
+                total += time.getTDuration();
+            }
+        }
+        return total;
     }
 }
 

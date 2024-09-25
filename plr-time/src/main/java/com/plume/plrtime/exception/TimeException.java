@@ -7,8 +7,8 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum TimeException implements ErrorEnum {
-    ACTIVITY_TID_ERR(-1, "当前活动tID错误"),
-    ACTIVITY_RUNNING(-2,"其他活动正在运行")
+    ACTIVITY_TID_ERR(5001, "当前活动tID错误"),
+    ACTIVITY_RUNNING(5002,"其他活动正在运行")
     ;
 
     private Integer code;
