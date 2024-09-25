@@ -38,7 +38,7 @@ public class ActivityController {
     public Result list() {
         List<Activity> list = activityService.list();
         // 获取昨天零点的时间戳
-        LocalDateTime yesterdayMidnight = LocalDateTime.of(LocalDate.now().minusDays(1), LocalTime.MIDNIGHT);
+        LocalDateTime yesterdayMidnight = LocalDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT);
         Date yesterdayMidnightDate = Date.from(yesterdayMidnight.atZone(ZoneId.systemDefault()).toInstant());
 
         List<ActivityVO> activityVOS = new ArrayList<>();
@@ -54,7 +54,7 @@ public class ActivityController {
             activityVO.setADec(activity.getADec());
             activityVO.setATime(activity.getATime());
             activityVO.setAStatus(activity.getAStatus());
-            activityVO.setToday_time(totalDuration);
+            activityVO.setToday_time(totalDuration>24*60*60?24*60*60:totalDuration);
 
             activityVOS.add(activityVO);
         }
