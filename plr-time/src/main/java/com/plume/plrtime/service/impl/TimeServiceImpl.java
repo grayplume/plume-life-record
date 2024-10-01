@@ -7,6 +7,7 @@ import com.plume.plrtime.common.Constants;
 import com.plume.plrtime.common.Result;
 import com.plume.plrtime.exception.BusinessException;
 import com.plume.plrtime.exception.TimeException;
+
 import com.plume.plrtime.pojo.Activity;
 import com.plume.plrtime.pojo.Time;
 import com.plume.plrtime.pojo.dto.TimeDTO;
@@ -17,6 +18,7 @@ import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -108,6 +110,7 @@ public class TimeServiceImpl extends ServiceImpl<TimeMapper, Time>
         Integer count = count(aid);
         activity.setAStatus((currentStatus+1)%2);
         activity.setATime(count);
+        activity.setUpdateTime(new Date()); // 更新为当前时间
         activityService.updateById(activity);
     }
 

@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -36,7 +37,10 @@ public class ActivityController {
 
     @GetMapping("/list")
     public Result list() {
-        List<Activity> list = activityService.list();
+        // 构建查询条件将修改时间最新的放在前面
+        LambdaQueryWrapper<Activity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByDesc(Activity::getUpdateTime);
+        List<Activity> list = activityService.list(queryWrapper);
         // 获取昨天零点的时间戳
         LocalDateTime yesterdayMidnight = LocalDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT);
         Date yesterdayMidnightDate = Date.from(yesterdayMidnight.atZone(ZoneId.systemDefault()).toInstant());

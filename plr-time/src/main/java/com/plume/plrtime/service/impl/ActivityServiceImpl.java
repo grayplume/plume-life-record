@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 /**
 * @author plume
 * @description 针对表【plr_activity(活动表)】的数据库操作Service实现
-* @createDate 2024-09-20 23:06:38
+* @createDate 2024-10-01 23:13:37
 */
 @Service
 public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity>

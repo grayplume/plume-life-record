@@ -12,11 +12,12 @@
             <result property="aDec" column="a_dec" jdbcType="VARCHAR"/>
             <result property="aStatus" column="a_status" jdbcType="INTEGER"/>
             <result property="aTime" column="a_time" jdbcType="INTEGER"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         a_id,t_id,u_id,
         a_name,a_dec,a_status,
-        a_time
+        a_time,update_time
     </sql>
 </mapper>
