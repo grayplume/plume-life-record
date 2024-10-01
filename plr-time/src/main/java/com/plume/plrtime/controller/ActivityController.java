@@ -45,6 +45,9 @@ public class ActivityController {
 
         for (Activity activity : list) {
             Integer totalDuration = timeMapper.getTotalDurationByAIdAndEndTime(activity.getAId(), yesterdayMidnightDate);
+            if (totalDuration==null){
+                totalDuration=0;
+            }
 
             ActivityVO activityVO = new ActivityVO();
             activityVO.setAId(activity.getAId());

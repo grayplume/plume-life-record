@@ -70,8 +70,7 @@ public class TimeServiceImpl extends ServiceImpl<TimeMapper, Time>
             if (timeDb.getEndTime()!=null){
                 throw new BusinessException(TimeException.ACTIVITY_TID_ERR);
             }
-            // 活动正在运行,关闭活动
-            changeStatus(activity.getAId());
+
 
             Date endDate = new Date();
             // 计算持续时间
@@ -79,6 +78,10 @@ public class TimeServiceImpl extends ServiceImpl<TimeMapper, Time>
             timeDb.setEndTime(endDate);
             timeDb.setTDuration(differenceInMillis/1000);
             save = updateById(timeDb);
+
+            // 活动正在运行,关闭活动
+            changeStatus(activity.getAId());
+
             map.put("duration", (int) (differenceInMillis/1000));
         }
         return save?Result.success(map):Result.error(Constants.CODE_500,"保存失败");
