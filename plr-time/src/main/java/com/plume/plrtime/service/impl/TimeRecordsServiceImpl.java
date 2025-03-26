@@ -2,10 +2,13 @@ package com.plume.plrtime.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.plume.plrtime.common.Result;
 import com.plume.plrtime.exception.BusinessException;
 import com.plume.plrtime.pojo.Activities;
+import com.plume.plrtime.pojo.Statistics;
 import com.plume.plrtime.pojo.TimeRecords;
 import com.plume.plrtime.service.ActivitiesService;
+import com.plume.plrtime.service.StatisticsService;
 import com.plume.plrtime.service.TimeRecordsService;
 import com.plume.plrtime.mapper.TimeRecordsMapper;
 import org.springframework.stereotype.Service;
@@ -22,9 +25,11 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
         implements TimeRecordsService {
 
     private final ActivitiesService activitiesService;
+    private final StatisticsService statisticsService;
 
-    public TimeRecordsServiceImpl(ActivitiesService activitiesService) {
+    public TimeRecordsServiceImpl(ActivitiesService activitiesService, StatisticsService statisticsService) {
         this.activitiesService = activitiesService;
+        this.statisticsService = statisticsService;
     }
 
     /**
@@ -49,7 +54,11 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
         timeRecord.setCreatedAt(new Date());
 
         // 4. 保存到数据库
-        return this.save(timeRecord);
+        this.save(timeRecord);
+
+        // 更新统计数据
+        totalTime(userId, activityId);
+        return true;
     }
 
     /**
@@ -69,7 +78,30 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
         // 3. 更新时间记录的结束时间和时长
         timeRecord.setEndTime(new Date());
         timeRecord.setDuration((int) ((timeRecord.getEndTime().getTime() - timeRecord.getStartTime().getTime()) / 1000));
-        return this.updateById(timeRecord);
+
+        this.updateById(timeRecord);
+
+        totalTime(userId, activityId);
+        return true;
+    }
+
+    /**
+     * 计算总时长并更新统计数据
+     */
+    private void totalTime(Long userId, Long activityId) {
+        // 计算总时长并更新统计数据
+        // 查询所有相同用户相同活动id时间记录
+        LambdaQueryWrapper<TimeRecords> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(TimeRecords::getUserId, userId.intValue())
+                .eq(TimeRecords::getActivityId, activityId.intValue());
+
+        Integer totalDuration = 0;
+
+        for (TimeRecords timeRecords : this.list(queryWrapper)) {
+            totalDuration += timeRecords.getDuration();
+        }
+
+        updateStatistics(userId, activityId, totalDuration);
     }
 
     /**
@@ -118,5 +150,26 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
                 .last("LIMIT 1");
 
         return this.getOne(queryWrapper);
+    }
+
+    private void updateStatistics(Long userId, Long activityId, Integer duration) {
+        LambdaQueryWrapper<Statistics> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Statistics::getUserId, userId)
+                .eq(Statistics::getActivityId, activityId);
+
+        Statistics record = statisticsService.getOne(queryWrapper);
+        if (record == null) {
+            // 插入新记录
+            Statistics newRecord = new Statistics();
+            newRecord.setUserId(userId.intValue());
+            newRecord.setActivityId(activityId.intValue());
+            newRecord.setDate(new Date());
+            newRecord.setTotalDuration(duration);
+            statisticsService.save(newRecord);
+        } else {
+            // 更新现有记录
+            record.setTotalDuration(duration);
+            statisticsService.updateById(record);
+        }
     }
 }

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.plume.plrtime.mapper.StatisticsMapper">
+
+    <resultMap id="BaseResultMap" type="com.plume.plrtime.pojo.Statistics">
+            <id property="statId" column="stat_id" />
+            <result property="userId" column="user_id" />
+            <result property="activityId" column="activity_id" />
+            <result property="date" column="date" />
+            <result property="totalDuration" column="total_duration" />
+            <result property="createdAt" column="created_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        stat_id,user_id,activity_id,date,total_duration,created_at
+    </sql>
+</mapper>
