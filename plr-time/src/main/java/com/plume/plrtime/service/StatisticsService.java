@@ -2,6 +2,9 @@ package com.plume.plrtime.service;
 
 import com.plume.plrtime.pojo.Statistics;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.plume.plrtime.pojo.vo.StatisticsVO;
+
+import java.util.List;
 
 /**
 * @author plume
@@ -10,4 +13,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface StatisticsService extends IService<Statistics> {
 
+    List<StatisticsVO> show();
+
+    List<StatisticsVO> getByUserId(Integer userId);
 }
