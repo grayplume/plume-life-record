@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 import lombok.Data;
 
@@ -33,7 +35,7 @@ public class Statistics {
     /**
      * 
      */
-    private Date date;
+    private LocalDateTime date;
 
     /**
      * 
@@ -43,5 +45,5 @@ public class Statistics {
     /**
      * 
      */
-    private Date createdAt;
+    private LocalDateTime createdAt;
 }

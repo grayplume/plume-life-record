@@ -13,6 +13,8 @@ import com.plume.plrtime.service.TimeRecordsService;
 import com.plume.plrtime.mapper.TimeRecordsMapper;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -47,11 +49,11 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
         TimeRecords timeRecord = new TimeRecords();
         timeRecord.setUserId(userId.intValue());
         timeRecord.setActivityId(activityId.intValue());
-        timeRecord.setStartTime(new Date());
+        timeRecord.setStartTime(LocalDateTime.now());
         timeRecord.setEndTime(null);
         timeRecord.setDuration(0);
         timeRecord.setNotes("");
-        timeRecord.setCreatedAt(new Date());
+        timeRecord.setCreatedAt(LocalDateTime.now());
 
         // 4. 保存到数据库
         this.save(timeRecord);
@@ -76,8 +78,8 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
         }
 
         // 3. 更新时间记录的结束时间和时长
-        timeRecord.setEndTime(new Date());
-        timeRecord.setDuration((int) ((timeRecord.getEndTime().getTime() - timeRecord.getStartTime().getTime()) / 1000));
+        timeRecord.setEndTime(LocalDateTime.now());
+        timeRecord.setDuration((int) Duration.between(timeRecord.getStartTime(), timeRecord.getEndTime()).getSeconds());
 
         this.updateById(timeRecord);
 
@@ -132,8 +134,8 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
 
         TimeRecords runningRecord = this.getOne(queryWrapper);
         if (runningRecord != null) {
-            runningRecord.setEndTime(new Date());
-            runningRecord.setDuration((int) ((runningRecord.getEndTime().getTime() - runningRecord.getStartTime().getTime()) / 1000));
+            runningRecord.setEndTime(LocalDateTime.now());
+            runningRecord.setDuration((int) ((Duration.between(runningRecord.getStartTime(), runningRecord.getEndTime()).getSeconds())));
             this.updateById(runningRecord);
         }
     }
@@ -163,7 +165,7 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
             Statistics newRecord = new Statistics();
             newRecord.setUserId(userId.intValue());
             newRecord.setActivityId(activityId.intValue());
-            newRecord.setDate(new Date());
+            newRecord.setDate(LocalDateTime.now());
             newRecord.setTotalDuration(duration);
             statisticsService.save(newRecord);
         } else {
