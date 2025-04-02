@@ -127,14 +127,15 @@
 
 <div class="form-container">
     <div class="form-group">
-        <label for="newActivityName">New Activity Name:</label>
+        <label for="newActivityName">Activity Name:</label>
         <input type="text" id="newActivityName" placeholder="Enter activity name">
     </div>
     <div class="form-group">
         <label for="newActivityUserId">User ID:</label>
-        <input type="number" id="newActivityUserId" placeholder="Enter user ID">
+        <input type="number" id="newActivityUserId" placeholder="Enter user ID" value="3" readonly>
     </div>
-    <button class="submit-button" onclick="addActivity()">Add Activity</button>
+    <button id="activityButton" class="submit-button" onclick="addActivity()">Add Activity</button>
+    <input type="hidden" id="editingActivityId"> <!-- 存储正在编辑的 activityId -->
 </div>
 
 <table>
@@ -158,7 +159,8 @@
             th:text="${hours > 0 ? (minutes > 0 ? hours + ' h ' + minutes + ' m' : hours + ' h') : minutes + ' m'}">
         </td>
         <td>
-            <button class="action-button" th:attr="onclick='editActivity(' + ${activity.activityId} + ', ' + ${activity.userId} + ', ' + ${activity.name} + ')'" >Edit</button>
+            <button class="action-button" th:attr="onclick='editActivity(' + ${activity.activityId} + ', ' + ${activity.userId} + ', \'' + ${activity.name} + '\')'">Edit</button>
+
             <button class="action-button" th:attr="onclick='deleteActivity(' + ${activity.activityId} + ')'" >Delete</button>
         </td>
     </tr>
@@ -167,6 +169,7 @@
 
 <script>
     function addActivity() {
+        const activityId = document.getElementById('editingActivityId').value; // 获取隐藏的 Activity ID
         const name = document.getElementById('newActivityName').value;
         const userId = document.getElementById('newActivityUserId').value;
 
@@ -175,41 +178,57 @@
             return;
         }
 
-        $.ajax({
-            url: '/activity/save',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({userId: parseInt(userId), name: name}),
-            success: function(response) {
-                alert('Activity added: ' + response.data.name);
-                location.reload(); // Refresh the page to update the list
-            },
-            error: function(error) {
-                alert('Error adding activity: ' + error.responseText);
-            }
-        });
-    }
-
-    function editActivity(activityId, userId, name) {
-        const newName = prompt('Enter new activity name:', name);
-        if (newName === null) {
-            return; // User canceled the prompt
+        if (activityId) {
+            // 如果存在 activityId，执行更新操作
+            $.ajax({
+                url: '/activity/update',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({activityId: parseInt(activityId), userId: parseInt(userId), name: name}),
+                success: function(response) {
+                    alert('Activity updated: ' + response.code);
+                    resetForm(); // 重置表单
+                    location.reload(); // 刷新页面
+                },
+                error: function(error) {
+                    alert('Error updating activity: ' + error.responseText);
+                }
+            });
+        } else {
+            // 否则，执行新增操作
+            $.ajax({
+                url: '/activity/save',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({userId: parseInt(userId), name: name}),
+                success: function(response) {
+                    alert('Activity added: ' + response.code);
+                    resetForm(); // 重置表单
+                    location.reload();
+                },
+                error: function(error) {
+                    alert('Error adding activity: ' + error.responseText);
+                }
+            });
         }
-
-        $.ajax({
-            url: '/activities/update',
-            type: 'PUT',
-            contentType: 'application/json',
-            data: JSON.stringify({activityId: activityId, userId: userId, name: newName}),
-            success: function(response) {
-                alert('Activity updated: ' + response.data.name);
-                location.reload(); // Refresh the page to update the list
-            },
-            error: function(error) {
-                alert('Error updating activity: ' + error.responseText);
-            }
-        });
     }
+
+    // 点击 Edit 按钮时，填充表单
+    function editActivity(activityId, userId, name) {
+        document.getElementById('newActivityName').value = name;
+        document.getElementById('newActivityUserId').value = userId;
+        document.getElementById('editingActivityId').value = activityId; // 存储 activityId
+        document.getElementById('activityButton').innerText = "Update Activity"; // 按钮改为 "Update Activity"
+    }
+
+    // 重置表单
+    function resetForm() {
+        document.getElementById('newActivityName').value = "";
+        document.getElementById('newActivityUserId').value = "3";
+        document.getElementById('editingActivityId').value = "";
+        document.getElementById('activityButton').innerText = "Add Activity"; // 恢复按钮
+    }
+
 
     function deleteActivity(activityId) {
         if (!confirm('Are you sure you want to delete this activity?')) {
@@ -217,10 +236,10 @@
         }
 
         $.ajax({
-            url: '/activities/delete/' + activityId,
-            type: 'DELETE',
+            url: '/activity/delete/' + activityId,
+            type: 'POST',
             success: function(response) {
-                alert('Activity deleted: ' + response.data);
+                alert('Activity deleted: ' + response.code);
                 location.reload(); // Refresh the page to update the list
             },
             error: function(error) {
