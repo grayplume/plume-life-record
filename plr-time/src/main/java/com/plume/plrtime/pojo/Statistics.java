@@ -45,5 +45,7 @@ public class Statistics {
     /**
      * 
      */
+    private Integer status;
+
     private LocalDateTime createdAt;
 }

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>活动统计</title>
+    <style>
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<h1>活动统计信息</h1>
+
+<!-- 数据表格 -->
+<table>
+    <thead>
+    <tr>
+        <th>活动 ID</th>
+        <th>活动名称</th>
+        <th>总时长（分钟）</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- 遍历 statisticsList 并展示数据 -->
+    <tr th:each="stat : ${statisticsList}">
+        <td th:text="${stat.activityId}">活动 ID</td>
+        <td th:text="${stat.activityName}">活动名称</td>
+        <td th:text="${stat.totalDuration}">总时长</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

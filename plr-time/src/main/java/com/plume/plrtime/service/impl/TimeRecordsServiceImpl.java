@@ -1,6 +1,7 @@
 package com.plume.plrtime.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.plume.plrtime.common.Result;
 import com.plume.plrtime.exception.BusinessException;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author plume
@@ -155,10 +157,10 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
     }
 
     private void updateStatistics(Long userId, Long activityId, Integer duration) {
+        // 查询统计记录
         LambdaQueryWrapper<Statistics> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Statistics::getUserId, userId)
                 .eq(Statistics::getActivityId, activityId);
-
         Statistics record = statisticsService.getOne(queryWrapper);
         if (record == null) {
             // 插入新记录
@@ -169,6 +171,22 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
             newRecord.setTotalDuration(duration);
             statisticsService.save(newRecord);
         } else {
+            // 查询结束时间为null的记录
+            QueryWrapper<TimeRecords> recordsQueryWrapper = new QueryWrapper<>();
+            QueryWrapper<TimeRecords> queryWrapperNull = recordsQueryWrapper
+                    .eq("user_id", userId)
+                    .eq("activity_id", activityId)
+                    .isNull("end_time");
+            // 查询是否有未结束的时间记录
+            List<TimeRecords> list = this.list(queryWrapperNull);
+
+            if (!list.isEmpty()) {
+                // 如果有未结束的时间记录，则标记状态为1
+                record.setStatus(1);
+            }else {
+                record.setStatus(0);
+            }
+
             // 更新现有记录
             record.setTotalDuration(duration);
             statisticsService.updateById(record);

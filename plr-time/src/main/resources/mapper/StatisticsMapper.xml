@@ -11,9 +11,10 @@
             <result property="date" column="date" />
             <result property="totalDuration" column="total_duration" />
             <result property="createdAt" column="created_at" />
+            <result property="status" column="status" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        stat_id,user_id,activity_id,date,total_duration,created_at
+        stat_id,user_id,activity_id,date,total_duration,created_at,status
     </sql>
 </mapper>

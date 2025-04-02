@@ -1,14 +1,17 @@
 package com.plume.plrtime.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.plume.plrtime.exception.BusinessException;
 import com.plume.plrtime.pojo.Activities;
 import com.plume.plrtime.pojo.Statistics;
+import com.plume.plrtime.pojo.TimeRecords;
 import com.plume.plrtime.pojo.vo.StatisticsVO;
 import com.plume.plrtime.service.ActivitiesService;
 import com.plume.plrtime.service.StatisticsService;
 import com.plume.plrtime.mapper.StatisticsMapper;
+import com.plume.plrtime.service.TimeRecordsService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -51,6 +54,7 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
                     StatisticsVO vo = new StatisticsVO();
                     vo.setActivityId(statistics.getActivityId());
                     vo.setTotalDuration(statistics.getTotalDuration()/60);
+                    vo.setStatus(statistics.getStatus());
                     vo.setActivityName(activityNameMap.get(statistics.getActivityId()));
                     return vo;
                 })
