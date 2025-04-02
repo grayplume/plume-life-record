@@ -1,17 +1,28 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Page</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* 给canvas元素添加固定的大小 */
         canvas {
-            width: 80%;  /* 设置图表的宽度 */
-            height: 80%; /* 设置图表的高度 */
+            width: 85%;  /* 设置图表的宽度 */
+            height: auto; /* 设置图表的高度 */
             margin: 0 auto;
             position: relative;
 
+        }
+
+        a {
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+            margin-right: 20px;
+        }
+
+        a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -22,13 +33,16 @@
 
 <a href="/web/index">Go to Activities Management</a>
 
-<h1>Today's Time Distribution (Heatmap)</h1>
+<h1>Today's Time</h1>
 
 <!-- 渲染 hourlyDuration 数据到 HTML 元素中 -->
 <div id="hourlyData" th:data-hourly-duration="${hourlyDurationJson}"></div>
 <div id="dailyDuration" th:data-daily-duration="${dailyDurationJson}"></div>
 
 <canvas id="heatmapChart" width="400" height="200"></canvas>
+
+<h1>Mouth's Time</h1>
+
 <canvas id="studyDurationChart" width="400" height="200"></canvas>
 
 <script>
@@ -55,8 +69,8 @@
                 backgroundColor: function(context) {
                     var value = context.dataset.data[context.dataIndex];
                     // 设置背景色：根据时长动态设置颜色
-                    return value > 10000 ? 'rgba(255, 99, 132, 0.7)' :
-                        value > 5000 ? 'rgba(54, 162, 235, 0.7)' :
+                    return value > 40 ? 'rgb(12,106,106)' :
+                        value > 20 ? 'rgb(32,151,152)' :
                             'rgba(75, 192, 192, 0.7)';
                 },
                 borderColor: 'rgba(255, 255, 255, 1)',

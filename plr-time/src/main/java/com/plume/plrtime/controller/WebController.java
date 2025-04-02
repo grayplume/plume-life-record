@@ -43,26 +43,33 @@ public class WebController {
 
         // 计算今日每小时的总时长
         Map<Integer, Integer> hourlyDuration = new HashMap<>();
+
         for (TimeRecords stat : list) {
             // 筛选出今天的数据
             if (stat.getStartTime().toLocalDate().equals(LocalDate.now())) {
                 int hour = stat.getStartTime().getHour();
-                int duration = stat.getDuration();
+                int minute = stat.getStartTime().getMinute();
+                int second = stat.getStartTime().getSecond();
+                int duration = stat.getDuration(); // 总时长（秒）
 
-                // 处理跨小时的情况
                 while (duration > 0) {
-                    // 如果当前小时的活动时长小于3600秒，则将剩余时长加到当前小时
-                    int timeToAdd = Math.min(duration, 3600 - hourlyDuration.getOrDefault(hour, 0));
+                    // 计算当前小时还剩下多少秒
+                    int remainingTimeInHour = 3600 - (minute * 60 + second); // 当前小时剩余的秒数
 
-                    // 累加当前小时的时长
+                    // 如果当前小时的剩余时间比 duration 小，就先加满当前小时
+                    int timeToAdd = Math.min(duration, remainingTimeInHour);
+
+                    // 记录时间到当前小时
                     hourlyDuration.put(hour, hourlyDuration.getOrDefault(hour, 0) + timeToAdd);
 
-                    // 更新剩余时长
+                    // 更新剩余时间
                     duration -= timeToAdd;
 
-                    // 如果还有剩余时长，转到下一个小时
+                    // 进入下一个小时
                     if (duration > 0) {
-                        hour = (hour + 1) % 24;  // 如果是23点，转到0点
+                        hour = (hour + 1) % 24;  // 如果 hour == 23，就变成 0
+                        minute = 0; // 下一个小时从 0 分钟开始
+                        second = 0; // 下一个小时从 0 秒开始
                     }
                 }
             }
@@ -94,7 +101,7 @@ public class WebController {
         // 转化为JSON 字符串
         ObjectMapper objectMapper2 = new ObjectMapper();
         String dailyDurationJson = objectMapper2.writeValueAsString(sortedList);
-        System.out.println(dailyDurationJson);
+//        System.out.println(dailyDurationJson);
         model.addAttribute("dailyDurationJson", dailyDurationJson);
 
 

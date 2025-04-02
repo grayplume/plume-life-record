@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=0.8">
     <title>Activities Management</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
@@ -9,6 +9,8 @@
             font-family: Arial, sans-serif;
             background-color: #f4f7fa;
             margin: 20px;
+            width: 95%;   /* 确保宽度不超过屏幕 */
+            overflow-x: hidden;  /* 防止横向滚动条 */
         }
 
         h1 {
@@ -92,7 +94,7 @@
     <thead>
     <tr>
         <th>ID</th>
-        <th>User ID</th>
+        <th>UID</th>
         <th>Name</th>
         <th>Time</th>
         <th>Status</th>
@@ -115,7 +117,7 @@
         <td>
             <span th:class="${activityIdStatusMap[activity.activityId] == 1 ? 'status status-1' :
                             activityIdStatusMap[activity.activityId] == 0 ? 'status status-2' : 'status status-3'}"
-                  th:text="${activityIdStatusMap[activity.activityId]==1? '运行中':'未运行'}">
+                  th:text="${activityIdStatusMap[activity.activityId]==1? 'RUNNING':'STOP'}">
             </span>
         </td>
 
@@ -161,7 +163,7 @@
     }
 </script>
 
-<a href="/web/test">Go to Test Page</a>
+<!--<a href="/web/test">Go to Test Page</a>-->
 <a href="/web/activity">Go to Activity Page</a>
 <a href="/web/test">Go to Test Page</a>
 
