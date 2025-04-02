@@ -41,36 +41,43 @@ public class WebController {
     public String showTodayTimeDistribution(Model model) throws JsonProcessingException {
         List<TimeRecords> list = timeRecordsService.list();
 
-        // 计算今日每小时的总时长
-        Map<Integer, Integer> hourlyDuration = new HashMap<>();
+        // 计算每小时的总时长（按日期区分）
+        Map<LocalDate, Map<Integer, Integer>> dailyHourlyDuration = new HashMap<>();
 
         for (TimeRecords stat : list) {
-            // 筛选出今天的数据
-            if (stat.getStartTime().toLocalDate().equals(LocalDate.now())) {
-                int hour = stat.getStartTime().getHour();
-                int minute = stat.getStartTime().getMinute();
-                int second = stat.getStartTime().getSecond();
-                int duration = stat.getDuration(); // 总时长（秒）
+            LocalDate date = stat.getStartTime().toLocalDate();
+            int hour = stat.getStartTime().getHour();
+            int minute = stat.getStartTime().getMinute();
+            int second = stat.getStartTime().getSecond();
+            int duration = stat.getDuration(); // 总时长（秒）
 
-                while (duration > 0) {
-                    // 计算当前小时还剩下多少秒
-                    int remainingTimeInHour = 3600 - (minute * 60 + second); // 当前小时剩余的秒数
+            while (duration > 0) {
+                // 获取当前小时还剩多少秒
+                int remainingTimeInHour = 3600 - (minute * 60 + second);
 
-                    // 如果当前小时的剩余时间比 duration 小，就先加满当前小时
-                    int timeToAdd = Math.min(duration, remainingTimeInHour);
+                // 计算本小时内最多能加多少秒
+                int timeToAdd = Math.min(duration, remainingTimeInHour);
 
-                    // 记录时间到当前小时
-                    hourlyDuration.put(hour, hourlyDuration.getOrDefault(hour, 0) + timeToAdd);
+                // 记录时间到当前日期和小时
+                dailyHourlyDuration
+                        .computeIfAbsent(date, k -> new HashMap<>())  // 如果当天没有数据，初始化
+                        .merge(hour, timeToAdd, Integer::sum);  // 累加到当前小时
 
-                    // 更新剩余时间
-                    duration -= timeToAdd;
+                // 更新剩余时间
+                duration -= timeToAdd;
 
-                    // 进入下一个小时
-                    if (duration > 0) {
-                        hour = (hour + 1) % 24;  // 如果 hour == 23，就变成 0
-                        minute = 0; // 下一个小时从 0 分钟开始
-                        second = 0; // 下一个小时从 0 秒开始
+                // 进入下一个小时
+                if (duration > 0) {
+                    hour = (hour + 1) % 24;  // 小时进位
+
+                    // 如果到了 00:00，说明跨天了，日期也要变
+                    if (hour == 0) {
+                        date = date.plusDays(1); // 日期加一天
                     }
+
+                    // 从新小时的 0 分钟 0 秒开始
+                    minute = 0;
+                    second = 0;
                 }
             }
         }
@@ -107,7 +114,7 @@ public class WebController {
 
         // 将 hourlyDuration 转换为 JSON 字符串并传递给前端
         ObjectMapper objectMapper = new ObjectMapper();
-        String hourlyDurationJson = objectMapper.writeValueAsString(hourlyDuration);
+        String hourlyDurationJson = objectMapper.writeValueAsString(dailyHourlyDuration);
         model.addAttribute("hourlyDurationJson", hourlyDurationJson);
 
         return "test"; // 返回 Thymeleaf 模板
