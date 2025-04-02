@@ -5,48 +5,109 @@
     <title>Activities Management</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fa;
+            margin: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
+
         th, td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px 15px;
+            text-align: left;
         }
+
         th {
-            background-color: #f2f2f2;
+            background-color: #649765;
+            color: white;
         }
+
+        td {
+            background-color: #fff;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
         .action-button {
-            margin: 5px;
-            padding: 5px 10px;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            text-align: center;
             cursor: pointer;
+            border-radius: 5px;
+            margin-right: 5px;
+            transition: background-color 0.3s;
         }
+
+        .action-button:hover {
+            background-color: #005f7f;
+        }
+
         .form-container {
             margin-bottom: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         .form-group {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
+
         .form-group label {
+            font-size: 14px;
+            margin-bottom: 8px;
             display: block;
-            margin-bottom: 5px;
         }
+
         .form-group input {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
+            width: 90%;
+            padding: 12px 15px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
         }
+
+        .form-group input:focus {
+            border-color: #649765;
+            background-color: #fff;
+        }
+
         .submit-button {
             padding: 10px 15px;
             background-color: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
         }
+
         .submit-button:hover {
             background-color: #45a049;
         }
-        /*链接*/
+
         a {
             text-decoration: none;
             color: #007BFF;
@@ -90,9 +151,12 @@
         <td th:text="${activity.activityId}"></td>
         <td th:text="${activity.userId}"></td>
         <td th:text="${activity.name}"></td>
-        <td th:text="${statisticsVOS[activity.activityId]} ?: '0'"></td>
+        <td th:with="totalMinutes=${statisticsVOS[activity.activityId]} ?: 0,
+            hours=${totalMinutes / 60},
+            minutes=${totalMinutes % 60}"
+            th:text="${hours > 0 ? (minutes > 0 ? hours + ' h ' + minutes + ' m' : hours + ' h') : minutes + ' m'}">
+        </td>
         <td>
-
             <button class="action-button" th:attr="onclick='editActivity(' + ${activity.activityId} + ', ' + ${activity.userId} + ', ' + ${activity.name} + ')'" >Edit</button>
             <button class="action-button" th:attr="onclick='deleteActivity(' + ${activity.activityId} + ')'" >Delete</button>
         </td>
