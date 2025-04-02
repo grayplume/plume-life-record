@@ -44,40 +44,43 @@ public class WebController {
         // 计算每小时的总时长（按日期区分）
         Map<LocalDate, Map<Integer, Integer>> dailyHourlyDuration = new HashMap<>();
 
+
         for (TimeRecords stat : list) {
-            LocalDate date = stat.getStartTime().toLocalDate();
-            int hour = stat.getStartTime().getHour();
-            int minute = stat.getStartTime().getMinute();
-            int second = stat.getStartTime().getSecond();
-            int duration = stat.getDuration(); // 总时长（秒）
+            if (stat.getStartTime().toLocalDate().equals(LocalDate.now())) {
+                LocalDate date = stat.getStartTime().toLocalDate();
+                int hour = stat.getStartTime().getHour();
+                int minute = stat.getStartTime().getMinute();
+                int second = stat.getStartTime().getSecond();
+                int duration = stat.getDuration(); // 总时长（秒）
 
-            while (duration > 0) {
-                // 获取当前小时还剩多少秒
-                int remainingTimeInHour = 3600 - (minute * 60 + second);
+                while (duration > 0) {
+                    // 获取当前小时还剩多少秒
+                    int remainingTimeInHour = 3600 - (minute * 60 + second);
 
-                // 计算本小时内最多能加多少秒
-                int timeToAdd = Math.min(duration, remainingTimeInHour);
+                    // 计算本小时内最多能加多少秒
+                    int timeToAdd = Math.min(duration, remainingTimeInHour);
 
-                // 记录时间到当前日期和小时
-                dailyHourlyDuration
-                        .computeIfAbsent(date, k -> new HashMap<>())  // 如果当天没有数据，初始化
-                        .merge(hour, timeToAdd, Integer::sum);  // 累加到当前小时
+                    // 记录时间到当前日期和小时
+                    dailyHourlyDuration
+                            .computeIfAbsent(date, k -> new HashMap<>())  // 如果当天没有数据，初始化
+                            .merge(hour, timeToAdd, Integer::sum);  // 累加到当前小时
 
-                // 更新剩余时间
-                duration -= timeToAdd;
+                    // 更新剩余时间
+                    duration -= timeToAdd;
 
-                // 进入下一个小时
-                if (duration > 0) {
-                    hour = (hour + 1) % 24;  // 小时进位
+                    // 进入下一个小时
+                    if (duration > 0) {
+                        hour = (hour + 1) % 24;  // 小时进位
 
-                    // 如果到了 00:00，说明跨天了，日期也要变
-                    if (hour == 0) {
-                        date = date.plusDays(1); // 日期加一天
+                        // 如果到了 00:00，说明跨天了，日期也要变
+                        if (hour == 0) {
+                            date = date.plusDays(1); // 日期加一天
+                        }
+
+                        // 从新小时的 0 分钟 0 秒开始
+                        minute = 0;
+                        second = 0;
                     }
-
-                    // 从新小时的 0 分钟 0 秒开始
-                    minute = 0;
-                    second = 0;
                 }
             }
         }

@@ -53,11 +53,19 @@
 
     console.log(hourlyDuration);  // 调试输出，查看数据是否正确
 
-    // 创建一个包含24小时的标签，表示一天的每个小时
-    var hours = Array.from({ length: 24 }, (v, k) => k);
+    // 获取某个具体日期的数据（例如最新的日期）
+    var selectedDate = Object.keys(hourlyDuration)[0]; // 假设后端只返回一个日期
+    var hourlyDurationElement = hourlyDuration[selectedDate];
 
-    // 填充每小时的活动时长数据，如果没有数据则设置为0
-    var data = hours.map(hour => hourlyDuration[hour]/60 || 0);
+    console.log("Hourly Data for", selectedDate, hourlyDurationElement);
+
+    // 创建一个包含 0-23 点的数组
+    var hours = Array.from({ length: 24 }, (_, k) => k);
+
+    // 填充每小时的活动时长数据（没有数据的默认 0）
+    var data = hours.map(hour => hourlyDurationElement[hour]/60 || 0);
+
+    console.log(data);
 
     var chart1 = new Chart(ctx, {
         type: 'bar',  // 使用柱状图
