@@ -1,18 +1,27 @@
 package com.plume.plrtime.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.plume.plrtime.common.Result;
 import com.plume.plrtime.pojo.Activities;
+import com.plume.plrtime.pojo.TimeRecords;
 import com.plume.plrtime.pojo.vo.StatisticsVO;
 import com.plume.plrtime.service.ActivitiesService;
 import com.plume.plrtime.service.StatisticsService;
+import com.plume.plrtime.service.TimeRecordsService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/web")
@@ -20,15 +29,81 @@ public class WebController {
 
     private final StatisticsService statisticsService;
     private final ActivitiesService activitiesService;
+    private final TimeRecordsService timeRecordsService;
 
-    public WebController(StatisticsService statisticsService, ActivitiesService activitiesService) {
+    public WebController(StatisticsService statisticsService, ActivitiesService activitiesService, TimeRecordsService timeRecordsService) {
         this.statisticsService = statisticsService;
         this.activitiesService = activitiesService;
+        this.timeRecordsService = timeRecordsService;
     }
 
     @GetMapping("/test")
-    public String hello(Model model) {
-        return "test";
+    public String showTodayTimeDistribution(Model model) throws JsonProcessingException {
+        List<TimeRecords> list = timeRecordsService.list();
+
+        // 计算今日每小时的总时长
+        Map<Integer, Integer> hourlyDuration = new HashMap<>();
+        for (TimeRecords stat : list) {
+            // 筛选出今天的数据
+            if (stat.getStartTime().toLocalDate().equals(LocalDate.now())) {
+                int hour = stat.getStartTime().getHour();
+                int duration = stat.getDuration();
+
+                // 处理跨小时的情况
+                while (duration > 0) {
+                    // 如果当前小时的活动时长小于3600秒，则将剩余时长加到当前小时
+                    int timeToAdd = Math.min(duration, 3600 - hourlyDuration.getOrDefault(hour, 0));
+
+                    // 累加当前小时的时长
+                    hourlyDuration.put(hour, hourlyDuration.getOrDefault(hour, 0) + timeToAdd);
+
+                    // 更新剩余时长
+                    duration -= timeToAdd;
+
+                    // 如果还有剩余时长，转到下一个小时
+                    if (duration > 0) {
+                        hour = (hour + 1) % 24;  // 如果是23点，转到0点
+                    }
+                }
+            }
+        }
+
+        //计算当月
+        // 获取当前日期
+        LocalDate now = LocalDate.now();
+        // 获取一个月前的日期
+        LocalDate oneMonthAgo = now.minusMonths(1);
+        // 初始化一个Map来存储每日学习时长
+        Map<LocalDate, Integer> dailyDuration = new HashMap<>();
+        // 遍历学习记录
+        for (TimeRecords stat : list) {
+            LocalDateTime startTime = stat.getStartTime();
+            LocalDate date = startTime.toLocalDate();
+            // 只处理最近一个月内的数据
+            if (!date.isBefore(oneMonthAgo) && !date.isAfter(now)) {
+                // 累加每天的学习时长
+                int duration = stat.getDuration();
+                dailyDuration.put(date, dailyDuration.getOrDefault(date, 0) + duration);
+            }
+        }
+        // 按照日期排序
+        List<Map.Entry<LocalDate, Integer>> sortedList = new ArrayList<>(dailyDuration.entrySet());
+        sortedList.sort(Map.Entry.comparingByKey());
+
+        // 将数据传递到Thymeleaf模板
+        // 转化为JSON 字符串
+        ObjectMapper objectMapper2 = new ObjectMapper();
+        String dailyDurationJson = objectMapper2.writeValueAsString(sortedList);
+        System.out.println(dailyDurationJson);
+        model.addAttribute("dailyDurationJson", dailyDurationJson);
+
+
+        // 将 hourlyDuration 转换为 JSON 字符串并传递给前端
+        ObjectMapper objectMapper = new ObjectMapper();
+        String hourlyDurationJson = objectMapper.writeValueAsString(hourlyDuration);
+        model.addAttribute("hourlyDurationJson", hourlyDurationJson);
+
+        return "test"; // 返回 Thymeleaf 模板
     }
 
     @GetMapping("/index")

@@ -3,12 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <title>Test Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 给canvas元素添加固定的大小 */
+        canvas {
+            width: 80%;  /* 设置图表的宽度 */
+            height: 80%; /* 设置图表的高度 */
+            margin: 0 auto;
+            position: relative;
+
+        }
+    </style>
 </head>
+
 <body>
 
 <h1>Welcome to the Test Page</h1>
 
 <a href="/web/index">Go to Activities Management</a>
+
+<h1>Today's Time Distribution (Heatmap)</h1>
+
+<!-- 渲染 hourlyDuration 数据到 HTML 元素中 -->
+<div id="hourlyData" th:data-hourly-duration="${hourlyDurationJson}"></div>
+<div id="dailyDuration" th:data-daily-duration="${dailyDurationJson}"></div>
+
+<canvas id="heatmapChart" width="400" height="200"></canvas>
+<canvas id="studyDurationChart" width="400" height="200"></canvas>
+
+<script>
+    var ctx = document.getElementById('heatmapChart').getContext('2d');
+
+    // 从 HTML 元素中获取 data-hourly-duration 属性数据，并解析为 JSON 对象
+    var hourlyDuration = JSON.parse(document.getElementById('hourlyData').getAttribute('data-hourly-duration'));
+
+    console.log(hourlyDuration);  // 调试输出，查看数据是否正确
+
+    // 创建一个包含24小时的标签，表示一天的每个小时
+    var hours = Array.from({ length: 24 }, (v, k) => k);
+
+    // 填充每小时的活动时长数据，如果没有数据则设置为0
+    var data = hours.map(hour => hourlyDuration[hour]/60 || 0);
+
+    var chart1 = new Chart(ctx, {
+        type: 'bar',  // 使用柱状图
+        data: {
+            labels: hours,  // X 轴：每小时
+            datasets: [{
+                label: 'Activity Time (Minutes)',
+                data: data,  // Y 轴：每个小时的活动时长
+                backgroundColor: function(context) {
+                    var value = context.dataset.data[context.dataIndex];
+                    // 设置背景色：根据时长动态设置颜色
+                    return value > 10000 ? 'rgba(255, 99, 132, 0.7)' :
+                        value > 5000 ? 'rgba(54, 162, 235, 0.7)' :
+                            'rgba(75, 192, 192, 0.7)';
+                },
+                borderColor: 'rgba(255, 255, 255, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+
+    var ctx2 = document.getElementById('studyDurationChart').getContext('2d');
+
+    // 获取从 Thymeleaf 模板传递的 JSON 数据
+    var dailyDurationRaw = document.getElementById('dailyDuration').getAttribute('data-daily-duration');
+    console.log("Raw dailyDuration data: ", dailyDurationRaw);  // 打印原始数据
+
+    // 解析 JSON 数据
+    var dailyDuration = JSON.parse(dailyDurationRaw);
+    console.log("Parsed dailyDuration: ", dailyDuration);  // 打印解析后的数据
+
+    // 提取日期和学习时长
+    var dates = dailyDuration.map(function(record) {
+        // 从每个对象中获取日期键
+        return Object.keys(record)[0];  // 取出日期（key）
+    });
+
+    var durations = dailyDuration.map(function(record) {
+        // 从每个对象中获取学习时长值
+        return record[Object.keys(record)[0]];  // 取出学习时长（value）
+    });
+
+    console.log("Dates: ", dates);  // 输出日期数组
+    console.log("Durations: ", durations);  // 输出学习时长数组
+
+    // 按月汇总数据
+    var monthDurationMap = {};
+    dates.forEach(function(date, index) {
+        // 提取月份（格式：YYYY-MM）
+        var month = new Date(date).toISOString().slice(0, 7);
+
+        // 将学习时长（秒）转换为分钟
+        var durationInMinutes = durations[index] / 60;
+
+        // 汇总每个月的学习时长
+        if (monthDurationMap[month]) {
+            monthDurationMap[month] += durationInMinutes;
+        } else {
+            monthDurationMap[month] = durationInMinutes;
+        }
+    });
+    // 获取所有月份和对应的总学习时长
+    var months = Object.keys(monthDurationMap);
+    var monthlyDurations = Object.values(monthDurationMap);
+
+    // 创建图表
+    var chart2 = new Chart(ctx2, {
+        type: 'bar',  // 使用柱状图
+        data: {
+            labels: dates,  // X 轴：月份
+            datasets: [{
+                label: 'Monthly Study Duration (Minutes)',  // Y 轴：每个月的学习时长（分钟）
+                data: monthlyDurations,  // 每个月的学习时长
+                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    type: 'category',
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Duration (Minutes)'
+                    }
+                }
+            }
+        }
+    });
+</script>
 
 </body>
 </html>
