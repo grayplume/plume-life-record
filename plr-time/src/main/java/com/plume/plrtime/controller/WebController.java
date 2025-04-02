@@ -44,15 +44,18 @@ public class WebController {
         // 计算每小时的总时长（按日期区分）
         Map<LocalDate, Map<Integer, Integer>> dailyHourlyDuration = new HashMap<>();
 
-
         for (TimeRecords stat : list) {
-            if (stat.getStartTime().toLocalDate().equals(LocalDate.now())) {
-                LocalDate date = stat.getStartTime().toLocalDate();
-                int hour = stat.getStartTime().getHour();
-                int minute = stat.getStartTime().getMinute();
-                int second = stat.getStartTime().getSecond();
-                int duration = stat.getDuration(); // 总时长（秒）
+            LocalDate date = stat.getStartTime().toLocalDate();
+            int hour = stat.getStartTime().getHour();
+            int minute = stat.getStartTime().getMinute();
+            int second = stat.getStartTime().getSecond();
+            int duration = stat.getDuration(); // 总时长（秒）
 
+            LocalDateTime endTime = stat.getStartTime().plusSeconds(duration);
+            LocalDate endDate = endTime.toLocalDate();
+
+            // 只计算 **今天** 及 **跨天延续到今天的**
+            if (date.equals(LocalDate.now()) || endDate.equals(LocalDate.now())) {
                 while (duration > 0) {
                     // 获取当前小时还剩多少秒
                     int remainingTimeInHour = 3600 - (minute * 60 + second);
