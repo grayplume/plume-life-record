@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=0.8">
     <title>Test Page</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" th:href="@{/navbar.css}">
     <style>
         /* 给canvas元素添加固定的大小 */
         canvas {
@@ -14,21 +15,20 @@
 
         }
 
-        a {
-            text-decoration: none;
-            color: #007BFF;
-            font-weight: bold;
-            margin-right: 20px;
+        body{
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fa;
+            margin: 20px;
+            /*width: 95%;   !* 确保宽度不超过屏幕 *!*/
+            overflow-x: hidden;  /* 防止横向滚动条 */
         }
 
-        a:hover {
-            text-decoration: underline;
-        }
+
     </style>
 </head>
 
 <body>
-
+<div th:replace="navbar :: navbar"></div>
 <h1>Welcome to the Test Page</h1>
 
 <a href="/web/index">Go to Activities Management</a>
@@ -119,25 +119,25 @@
     console.log("Dates: ", dates);  // 输出日期数组
     console.log("Durations: ", durations);  // 输出学习时长数组
 
-    // 按月汇总数据
-    var monthDurationMap = {};
-    dates.forEach(function(date, index) {
-        // 提取月份（格式：YYYY-MM）
-        var month = new Date(date).toISOString().slice(0, 7);
-
-        // 将学习时长（秒）转换为分钟
-        var durationInMinutes = durations[index] / 60;
-
-        // 汇总每个月的学习时长
-        if (monthDurationMap[month]) {
-            monthDurationMap[month] += durationInMinutes;
-        } else {
-            monthDurationMap[month] = durationInMinutes;
-        }
-    });
-    // 获取所有月份和对应的总学习时长
-    var months = Object.keys(monthDurationMap);
-    var monthlyDurations = Object.values(monthDurationMap);
+    // // 按月汇总数据
+    // var monthDurationMap = {};
+    // dates.forEach(function(date, index) {
+    //     // 提取月份（格式：YYYY-MM）
+    //     var month = new Date(date).toISOString().slice(0, 7);
+    //
+    //     // 将学习时长（秒）转换为分钟
+    //     var durationInMinutes = durations[index] / 60;
+    //
+    //     // 汇总每个月的学习时长
+    //     if (monthDurationMap[month]) {
+    //         monthDurationMap[month] += durationInMinutes;
+    //     } else {
+    //         monthDurationMap[month] = durationInMinutes;
+    //     }
+    // });
+    // // 获取所有月份和对应的总学习时长
+    // var months = Object.keys(monthDurationMap);
+    // var monthlyDurations = Object.values(monthDurationMap);
 
     // 创建图表
     var chart2 = new Chart(ctx2, {
@@ -146,7 +146,7 @@
             labels: dates,  // X 轴：月份
             datasets: [{
                 label: 'Monthly Study Duration (Minutes)',  // Y 轴：每个月的学习时长（分钟）
-                data: monthlyDurations,  // 每个月的学习时长
+                data: durations,  // 每个月的学习时长
                 backgroundColor: 'rgba(75, 192, 192, 0.7)',
                 borderColor: 'rgba(75, 192, 192, 1)',
                 borderWidth: 1

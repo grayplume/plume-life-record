@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=0.8">
     <title>Activities Management</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" th:href="@{/navbar.css}">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -109,20 +110,10 @@
             background-color: #45a049;
         }
 
-        a {
-            text-decoration: none;
-            color: #007BFF;
-            font-weight: bold;
-            margin-right: 20px;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
-
+<div th:replace="navbar :: navbar"></div>
 <h1>Activities Management</h1>
 
 <div class="form-container">
@@ -142,7 +133,7 @@
     <thead>
     <tr>
         <th>ID</th>
-        <th>User ID</th>
+        <th>UID</th>
         <th>Name</th>
         <th>Time</th>
         <th>Action</th>

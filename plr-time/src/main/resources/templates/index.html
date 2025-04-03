@@ -4,12 +4,13 @@
     <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=0.8">
     <title>Activities Management</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" th:href="@{/navbar.css}">
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f7fa;
             margin: 20px;
-            width: 95%;   /* 确保宽度不超过屏幕 */
+            /*width: 95%;   !* 确保宽度不超过屏幕 *!*/
             overflow-x: hidden;  /* 防止横向滚动条 */
         }
 
@@ -73,20 +74,21 @@
             background-color: #005f7f;
         }
 
-        a {
-            text-decoration: none;
-            color: #007BFF;
-            font-weight: bold;
-            margin-right: 20px;
-        }
+        /*a {*/
+        /*    text-decoration: none;*/
+        /*    color: #007BFF;*/
+        /*    font-weight: bold;*/
+        /*    margin-right: 20px;*/
+        /*}*/
 
-        a:hover {
-            text-decoration: underline;
-        }
+        /*a:hover {*/
+        /*    text-decoration: underline;*/
+        /*}*/
 
     </style>
 </head>
 <body>
+<div th:replace="navbar :: navbar"></div>
 
 <h1>Time Management</h1>
 
