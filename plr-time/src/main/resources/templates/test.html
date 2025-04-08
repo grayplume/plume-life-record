@@ -28,7 +28,7 @@
 </head>
 
 <body>
-<div th:replace="navbar :: navbar"></div>
+<div th:replace="~{navbar :: navbar}"></div>
 <h1>Welcome to the Test Page</h1>
 <h2>Today's Time</h2>
 
@@ -85,7 +85,9 @@
         options: {
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    min: 0,     // 最小值固定为 0
+                    max: 60     // 最大值固定为 60，根据你的数据情况调整
                 }
             }
         }
@@ -110,7 +112,7 @@
 
     var durations = dailyDuration.map(function(record) {
         // 从每个对象中获取学习时长值
-        return record[Object.keys(record)[0]];  // 取出学习时长（value）
+        return record[Object.keys(record)[0]]/60/60;  // 取出学习时长（value）
     });
 
     console.log("Dates: ", dates);  // 输出日期数组
@@ -140,11 +142,22 @@
     var chart2 = new Chart(ctx2, {
         type: 'bar',  // 使用柱状图
         data: {
-            labels: dates,  // X 轴：月份
+            // labels: dates,  // X 轴：月份
+            labels: dates.map(date => {
+                // 假设 dates 是字符串数组如 ["2025-03-01", ...]
+                return date.split('-')[2]; // 提取天数部分
+                // 如果是 Date 对象：return new Date(date).getDate();
+            }),
             datasets: [{
-                label: 'Monthly Study Duration (Minutes)',  // Y 轴：每个月的学习时长（分钟）
+                label: 'Monthly Study Duration (Hour)',  // Y 轴：每个月的学习时长（分钟）
                 data: durations,  // 每个月的学习时长
-                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                backgroundColor: function(context) {
+                    var value = context.dataset.data[context.dataIndex];
+                    // 设置背景色：根据时长动态设置颜色
+                    return value > 8 ? 'rgb(12,106,106)' :
+                        value > 4 ? 'rgb(32,151,152)' :
+                            'rgba(75, 192, 192, 0.7)';
+                },
                 borderColor: 'rgba(75, 192, 192, 1)',
                 borderWidth: 1
             }]
@@ -155,14 +168,34 @@
                     type: 'category',
                     title: {
                         display: true,
-                        text: 'Month'
+                        text: 'Day of Month'
                     }
                 },
+                // 可选：进一步控制标签显示
+            //     ticks: {
+            //         autoSkip: true,      // 自动跳过拥挤的标签
+            //         maxRotation: 0,      // 禁止旋转标签
+            //         callback: function(value) {
+            //             return value;   // 直接显示天数（已预处理）
+            //         }
+            //     }
+            // },
                 y: {
                     beginAtZero: true,
                     title: {
                         display: true,
                         text: 'Duration (Minutes)'
+                    },
+                    min: 0,     // 最小值固定为 0
+                    max: 12     // 最大值固定根据你的数据情况调整
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return dates[context[0].dataIndex]; // 悬停时显示完整日期
+                        }
                     }
                 }
             }

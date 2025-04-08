@@ -95,6 +95,13 @@ public class WebController {
         LocalDate oneMonthAgo = now.minusMonths(1);
         // 初始化一个Map来存储每日学习时长
         Map<LocalDate, Integer> dailyDuration = new HashMap<>();
+
+        LocalDate current = oneMonthAgo;
+        while (!current.isAfter(now)) {
+            dailyDuration.putIfAbsent(current, 0);  // 填充缺失日期
+            current = current.plusDays(1);
+        }
+
         // 遍历学习记录
         for (TimeRecords stat : list) {
             LocalDateTime startTime = stat.getStartTime();
@@ -109,6 +116,7 @@ public class WebController {
         // 按照日期排序
         List<Map.Entry<LocalDate, Integer>> sortedList = new ArrayList<>(dailyDuration.entrySet());
         sortedList.sort(Map.Entry.comparingByKey());
+
 
         // 将数据传递到Thymeleaf模板
         // 转化为JSON 字符串
