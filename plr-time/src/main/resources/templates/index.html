@@ -58,6 +58,33 @@
         .status-2 { background-color: #868585; } /* Grey for status 2 */
         .status-3 { background-color: #f44336; } /* Red for status 3 */
 
+        .status-1 {
+            background: #4CAF50;
+            position: relative;
+            overflow: hidden;
+
+            &::before {
+                content: "";
+                position: absolute;
+                bottom: 0;
+                left: -50%;
+                height: 2px;
+                width: 200%;
+                background: linear-gradient(90deg,
+                transparent,
+                rgba(255,255,255,0.6),
+                transparent);
+                animation: subtleFlow 2s infinite linear;
+            }
+        }
+
+        @keyframes subtleFlow {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+
+
         .action-button {
             background-color: #008CBA;
             color: white;
@@ -119,7 +146,7 @@
         <td>
             <span th:class="${activityIdStatusMap[activity.activityId] == 1 ? 'status status-1' :
                             activityIdStatusMap[activity.activityId] == 0 ? 'status status-2' : 'status status-3'}"
-                  th:text="${activityIdStatusMap[activity.activityId]==1? 'RUNNING':'STOP'}">
+                  th:text="${activityIdStatusMap[activity.activityId]==1? 'ON':'OFF'}">
             </span>
         </td>
 
