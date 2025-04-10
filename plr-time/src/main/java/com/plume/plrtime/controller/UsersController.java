@@ -1,6 +1,7 @@
 package com.plume.plrtime.controller;
 
 
+import com.plume.plrtime.common.CustomMd5PasswordEncoder;
 import com.plume.plrtime.common.Result;
 import com.plume.plrtime.pojo.Users;
 import com.plume.plrtime.service.UsersService;
@@ -32,6 +33,7 @@ public class UsersController {
      */
     @PostMapping("/save")
     public Result save(@RequestBody Users user){
+        user.setPasswordHash(new CustomMd5PasswordEncoder().encode(user.getPasswordHash()));
         boolean save = usersService.save(user);
         return Result.success(save);
     }
