@@ -73,7 +73,7 @@ public class SecurityConfig {
                             .defaultSuccessUrl("/web/index",true)
                             .usernameParameter("username") //自定义表单用户名参数，默认是username
                             .passwordParameter("password") //自定义表单密码参数，默认是password
-                            .failureUrl("/login?error") //登录失败的返回地址
+
                     ;
                 }); //使用表单授权方式
                 // 启用“记住我”功能的。允许用户在关闭浏览器后，仍然保持登录状态，直到他们主动注销或超出设定的过期时间。
@@ -81,6 +81,12 @@ public class SecurityConfig {
         // 关闭 csrf CSRF（跨站请求伪造）是一种网络攻击，攻击者通过欺骗已登录用户，诱使他们在不知情的情况下向受信任的网站发送请求。
         http.csrf(AbstractHttpConfigurer::disable);
 
+        //会话管理
+        http.sessionManagement(session -> {
+            session
+                    .maximumSessions(1)
+                    .expiredSessionStrategy(new MySessionInformationExpiredStrategy());
+        });
         return http.build();
     }
 

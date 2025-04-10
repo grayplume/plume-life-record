@@ -3,6 +3,7 @@ package com.plume.plrtime.config;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.plume.plrtime.mapper.UsersMapper;
 import com.plume.plrtime.pojo.Users;
+import com.plume.plrtime.pojo.vo.LoginUser;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsPasswordService;
@@ -63,10 +64,8 @@ public class DBUserDetailsManager implements UserDetailsManager, UserDetailsPass
             throw new UsernameNotFoundException("用户不存在");
         }else {
             Collection<GrantedAuthority> authorities = new ArrayList<>();
-            return new org.springframework.security.core.userdetails.User(
-                    users.getUsername(),
-                    users.getPasswordHash(),
-                    authorities
+            return new LoginUser(
+                    users
             );
         }
 

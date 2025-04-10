@@ -1,14 +1,23 @@
 package com.plume.plrtime.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.plume.plrtime.common.Result;
+import com.plume.plrtime.mapper.UsersMapper;
 import com.plume.plrtime.pojo.Activities;
 import com.plume.plrtime.pojo.TimeRecords;
+import com.plume.plrtime.pojo.Users;
+import com.plume.plrtime.pojo.vo.LoginUser;
 import com.plume.plrtime.pojo.vo.StatisticsVO;
 import com.plume.plrtime.service.ActivitiesService;
 import com.plume.plrtime.service.StatisticsService;
 import com.plume.plrtime.service.TimeRecordsService;
+import com.plume.plrtime.service.UsersService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,10 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
@@ -31,11 +37,15 @@ public class WebController {
     private final StatisticsService statisticsService;
     private final ActivitiesService activitiesService;
     private final TimeRecordsService timeRecordsService;
+    private final UsersService usersService;
+    private final UsersMapper usersMapper;
 
-    public WebController(StatisticsService statisticsService, ActivitiesService activitiesService, TimeRecordsService timeRecordsService) {
+    public WebController(StatisticsService statisticsService, ActivitiesService activitiesService, TimeRecordsService timeRecordsService, UsersService usersService, UsersMapper usersMapper) {
         this.statisticsService = statisticsService;
         this.activitiesService = activitiesService;
         this.timeRecordsService = timeRecordsService;
+        this.usersService = usersService;
+        this.usersMapper = usersMapper;
     }
 
     @GetMapping("/test")
@@ -141,6 +151,33 @@ public class WebController {
         return "login";
     }
 
+    @GetMapping("/")
+    public String info(Model model) {
+        System.out.println("index controller");
+
+        // 获取当前认证上下文
+        SecurityContext context = SecurityContextHolder.getContext();
+        Authentication authentication = context.getAuthentication();
+        LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+
+        // 获取当前认证用户的相关信息
+        String username = authentication.getName();  // 用户名
+
+
+
+        // 打印认证信息
+        System.out.println("Username: " + username);
+
+        System.out.println("============");
+        System.out.println(loginUser.getUser().getUserId()+loginUser.getUser().getUsername());
+        // 将用户名添加到 Model 中
+        model.addAttribute("username", username);
+
+        // 返回视图名称，Thymeleaf 会根据视图名称渲染页面
+        return "info";
+    }
+
+
 
     @GetMapping("/index")
     public String index(Model model) {
@@ -172,6 +209,15 @@ public class WebController {
         Map<Integer, Integer> activityIdDurationMap = statisticsVOS.stream()
                 .collect(java.util.stream.Collectors.toMap(StatisticsVO::getActivityId, StatisticsVO::getTotalDuration));
 
+        // 获取当前用户的认证信息
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        QueryWrapper<Users> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("username", username);
+        Users user = usersMapper.selectOne(queryWrapper);
+
+        model.addAttribute("uid", user.getUserId());
         model.addAttribute("statisticsVOS", activityIdDurationMap);
         return "activity";
     }
