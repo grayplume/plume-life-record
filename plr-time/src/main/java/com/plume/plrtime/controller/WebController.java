@@ -211,13 +211,9 @@ public class WebController {
 
         // 获取当前用户的认证信息
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
+        LoginUser loginUser = (LoginUser) authentication.getPrincipal();
 
-        QueryWrapper<Users> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("username", username);
-        Users user = usersMapper.selectOne(queryWrapper);
-
-        model.addAttribute("uid", user.getUserId());
+        model.addAttribute("uid", loginUser.getUser().getUserId());
         model.addAttribute("statisticsVOS", activityIdDurationMap);
         return "activity";
     }
