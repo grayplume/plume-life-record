@@ -182,12 +182,26 @@ public class WebController {
     @GetMapping("/index")
     public String index(Model model) {
         List<Activities> activitiesList = activitiesService.list();
-        model.addAttribute("activitiesList", activitiesList);
 
         List<StatisticsVO> statisticsVOS = statisticsService.show();
         // 将信息转换成activityId,duration的map
         Map<Integer, Integer> activityIdDurationMap = statisticsVOS.stream()
                 .collect(java.util.stream.Collectors.toMap(StatisticsVO::getActivityId, StatisticsVO::getTotalDuration));
+
+        // 根据statisticsVOS将activitiesList排序
+        Map<Integer, Integer> activityIdOrderMap = new HashMap<>();
+        for (int i = 0; i < statisticsVOS.size(); i++) {
+            activityIdOrderMap.put(statisticsVOS.get(i).getActivityId(), i);
+        }
+
+        activitiesList.sort((a1, a2) -> {
+            Integer index1 = activityIdOrderMap.getOrDefault(a1.getActivityId(), Integer.MAX_VALUE);
+            Integer index2 = activityIdOrderMap.getOrDefault(a2.getActivityId(), Integer.MAX_VALUE);
+            return index1.compareTo(index2);
+        });
+
+
+        model.addAttribute("activitiesList", activitiesList);
 
         model.addAttribute("statisticsVOS", activityIdDurationMap);
 
@@ -202,17 +216,30 @@ public class WebController {
     @GetMapping("/activity")
     public String activity(Model model) {
         List<Activities> activitiesList = activitiesService.list();
-        model.addAttribute("activitiesList", activitiesList);
+
 
         List<StatisticsVO> statisticsVOS = statisticsService.show();
         // 将信息转换成activityId,duration的map
         Map<Integer, Integer> activityIdDurationMap = statisticsVOS.stream()
                 .collect(java.util.stream.Collectors.toMap(StatisticsVO::getActivityId, StatisticsVO::getTotalDuration));
 
+        // 根据statisticsVOS将activitiesList排序
+        Map<Integer, Integer> activityIdOrderMap = new HashMap<>();
+        for (int i = 0; i < statisticsVOS.size(); i++) {
+            activityIdOrderMap.put(statisticsVOS.get(i).getActivityId(), i);
+        }
+
+        activitiesList.sort((a1, a2) -> {
+            Integer index1 = activityIdOrderMap.getOrDefault(a1.getActivityId(), Integer.MAX_VALUE);
+            Integer index2 = activityIdOrderMap.getOrDefault(a2.getActivityId(), Integer.MAX_VALUE);
+            return index1.compareTo(index2);
+        });
+
         // 获取当前用户的认证信息
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
 
+        model.addAttribute("activitiesList", activitiesList);
         model.addAttribute("uid", loginUser.getUser().getUserId());
         model.addAttribute("statisticsVOS", activityIdDurationMap);
         return "activity";

@@ -167,7 +167,6 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
             Statistics newRecord = new Statistics();
             newRecord.setUserId(userId.intValue());
             newRecord.setActivityId(activityId.intValue());
-            newRecord.setDate(LocalDateTime.now());
             newRecord.setTotalDuration(duration);
             statisticsService.save(newRecord);
         } else {
@@ -189,6 +188,7 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
 
             // 更新现有记录
             record.setTotalDuration(duration);
+            record.setUpdatedAt(LocalDateTime.now());
             statisticsService.updateById(record);
         }
     }

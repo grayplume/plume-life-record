@@ -48,6 +48,9 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
         Map<Integer, String> activityNameMap = activitiesService.listByIds(activityIds).stream()
                 .collect(Collectors.toMap(Activities::getActivityId, Activities::getName));
 
+        // Step 4: 对 statisticsList 按照 updatedAt 字段排序，最新的排在前面
+        statisticsList.sort((s1, s2) -> s2.getUpdatedAt().compareTo(s1.getUpdatedAt()));  // 按照 updatedAt 字段倒序排序
+
         // Step 4: 转换为 StatisticsVO 列表
         return statisticsList.stream()
                 .map(statistics -> {
