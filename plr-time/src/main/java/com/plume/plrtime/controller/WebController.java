@@ -8,6 +8,7 @@ import com.plume.plrtime.mapper.UsersMapper;
 import com.plume.plrtime.pojo.Activities;
 import com.plume.plrtime.pojo.TimeRecords;
 import com.plume.plrtime.pojo.Users;
+import com.plume.plrtime.pojo.vo.ActivityDurationVO;
 import com.plume.plrtime.pojo.vo.LoginUser;
 import com.plume.plrtime.pojo.vo.StatisticsVO;
 import com.plume.plrtime.service.ActivitiesService;
@@ -127,6 +128,14 @@ public class WebController {
         // 按照日期排序
         List<Map.Entry<LocalDate, Integer>> sortedList = new ArrayList<>(dailyDuration.entrySet());
         sortedList.sort(Map.Entry.comparingByKey());
+
+
+
+        // 今日时间分布
+        List<ActivityDurationVO> todayActivityDurations = statisticsService.getTodayActivityDurations();
+        String json = new ObjectMapper().writeValueAsString(todayActivityDurations);
+        model.addAttribute("todayActivityDurationsJson", json);
+        System.out.println("json = " + json);
 
 
         // 将数据传递到Thymeleaf模板

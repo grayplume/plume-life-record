@@ -7,6 +7,7 @@ import com.plume.plrtime.exception.BusinessException;
 import com.plume.plrtime.pojo.Activities;
 import com.plume.plrtime.pojo.Statistics;
 import com.plume.plrtime.pojo.TimeRecords;
+import com.plume.plrtime.pojo.vo.ActivityDurationVO;
 import com.plume.plrtime.pojo.vo.StatisticsVO;
 import com.plume.plrtime.service.ActivitiesService;
 import com.plume.plrtime.service.StatisticsService;
@@ -28,9 +29,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     implements StatisticsService{
 
     private final ActivitiesService activitiesService;
+    private final StatisticsMapper statisticsMapper;
 
-    public StatisticsServiceImpl(ActivitiesService activitiesService) {
+    public StatisticsServiceImpl(ActivitiesService activitiesService, StatisticsMapper statisticsMapper) {
         this.activitiesService = activitiesService;
+        this.statisticsMapper = statisticsMapper;
     }
 
     @Override
@@ -96,6 +99,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
                 })
                 .collect(Collectors.toList());
 
+    }
+
+    @Override
+    public List<ActivityDurationVO> getTodayActivityDurations() {
+        return statisticsMapper.selectTodayActivityDuration();
     }
 }
 
