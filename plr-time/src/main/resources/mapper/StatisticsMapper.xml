@@ -17,4 +17,30 @@
     <sql id="Base_Column_List">
         stat_id,user_id,activity_id,updated_at,total_duration,created_at,status
     </sql>
+    <select id="selectUserDurationStats" resultType="com.plume.plrtime.pojo.vo.UserDurationStatsVO">
+        SELECT
+            u.user_id,
+            u.username,
+
+            -- 总计时
+            IFNULL(SUM(tr.duration) / 60, 0) AS total_minutes,
+
+            -- 今年
+            IFNULL(SUM(CASE WHEN YEAR(tr.start_time) = YEAR(CURDATE()) THEN tr.duration ELSE 0 END) / 60, 0) AS year_minutes,
+
+            -- 本月
+            IFNULL(SUM(CASE WHEN YEAR(tr.start_time) = YEAR(CURDATE()) AND MONTH(tr.start_time) = MONTH(CURDATE()) THEN tr.duration ELSE 0 END) / 60, 0) AS month_minutes,
+
+            -- 本周（周一开始）
+            IFNULL(SUM(CASE WHEN YEARWEEK(tr.start_time, 1) = YEARWEEK(CURDATE(), 1) THEN tr.duration ELSE 0 END) / 60, 0) AS week_minutes,
+
+            -- 今日
+            IFNULL(SUM(CASE WHEN DATE(tr.start_time) = CURDATE() THEN tr.duration ELSE 0 END) / 60, 0) AS today_minutes
+
+        FROM users u
+                 LEFT JOIN time_records tr ON u.user_id = tr.user_id
+        WHERE u.user_id = #{userId} -- 替换为你实际的用户 ID
+        GROUP BY u.user_id, u.username;
+
+    </select>
 </mapper>

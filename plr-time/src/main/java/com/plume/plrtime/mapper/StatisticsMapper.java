@@ -3,6 +3,7 @@ package com.plume.plrtime.mapper;
 import com.plume.plrtime.pojo.Statistics;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.plume.plrtime.pojo.vo.ActivityDurationVO;
+import com.plume.plrtime.pojo.vo.UserDurationStatsVO;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -34,6 +35,8 @@ public interface StatisticsMapper extends BaseMapper<Statistics> {
         GROUP BY t.activity_id
         """)
     List<ActivityDurationVO> selectTodayActivityDuration();
+
+    UserDurationStatsVO selectUserDurationStats(String userId);
 }
 
 

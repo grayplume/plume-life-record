@@ -29,6 +29,57 @@
              margin: 2rem auto;
          }
 
+        .summary-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem auto;
+            max-width: 1000px;
+            padding: 0 1rem;
+        }
+
+        .summary-card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 1.2rem;
+            flex: 1 1 calc(25% - 1rem); /* 每列占据25%减去间隙 */
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        .summary-card:hover {
+            transform: scale(1.05);
+        }
+
+        .summary-title {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 0.4rem;
+        }
+
+        .summary-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #0e7c7b;
+        }
+
+        /* 小屏：每行最多 2 列 */
+        @media (max-width: 768px) {
+            .summary-card {
+                flex: 1 1 calc(50% - 1rem); /* 每行占 50% */
+            }
+        }
+
+        /* 超小屏：每行 1 个 */
+        @media (max-width: 480px) {
+            .summary-card {
+                flex: 1 1 100%; /* 每个卡片占满整行 */
+            }
+        }
+
+
     </style>
 </head>
 
@@ -36,6 +87,31 @@
 <div th:replace="~{navbar :: navbar}"></div>
 <h1>Welcome to the Test Page</h1>
 <h2>Today's Time</h2>
+
+<h2>统计概览</h2>
+<div class="summary-container">
+    <div class="summary-card">
+        <div class="summary-title">总计时</div>
+        <div class="summary-value" th:text="${totalDurationFormatted}">00h 00m</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-title">今年</div>
+        <div class="summary-value" th:text="${yearDurationFormatted}">00h 00m</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-title">本月</div>
+        <div class="summary-value" th:text="${monthDurationFormatted}">00h 00m</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-title">本周</div>
+        <div class="summary-value" th:text="${weekDurationFormatted}">00h 00m</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-title">今日</div>
+        <div class="summary-value" th:text="${todayDurationFormatted}">00h 00m</div>
+    </div>
+</div>
+
 
 <!-- 渲染 hourlyDuration 数据到 HTML 元素中 -->
 <div id="hourlyData" th:data-hourly-duration="${hourlyDurationJson}"></div>
@@ -47,6 +123,7 @@
 <div id="chart2" style="width: 100%; height: 300px;"></div>
 <div id="calendarHeatmap" style="width: 100%; height: 300px;"></div>
 
+<div id="activity-record-display" style="white-space: pre-line; margin-top: 20px; border: 1px solid #ccc; padding: 10px;"></div>
 
 
 <!-- 引入 ECharts 主库 -->
@@ -286,6 +363,12 @@
                         const minutes = Math.floor((item.totalDurationToday % 3600) / 60);
                         return `${item.activityName}: ${hours}h ${minutes}m`;
                     }).join('\n');
+
+                // 显示在页面上
+                const displayDiv = document.getElementById('activity-record-display'); // 你需要在 HTML 中添加一个 div 元素，id 为 activity-record-display
+                if (displayDiv) {
+                    displayDiv.textContent = text; // 更新显示的文本内容
+                }
 
                 navigator.clipboard.writeText(text).then(() => {
                     alert('✅ 已复制活动数据到剪贴板！');

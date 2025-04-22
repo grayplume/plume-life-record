@@ -11,6 +11,7 @@ import com.plume.plrtime.pojo.Users;
 import com.plume.plrtime.pojo.vo.ActivityDurationVO;
 import com.plume.plrtime.pojo.vo.LoginUser;
 import com.plume.plrtime.pojo.vo.StatisticsVO;
+import com.plume.plrtime.pojo.vo.UserDurationStatsVO;
 import com.plume.plrtime.service.ActivitiesService;
 import com.plume.plrtime.service.StatisticsService;
 import com.plume.plrtime.service.TimeRecordsService;
@@ -137,6 +138,14 @@ public class WebController {
         model.addAttribute("todayActivityDurationsJson", json);
         System.out.println("json = " + json);
 
+        // 统计用户总时长
+        UserDurationStatsVO vo = statisticsService.getUserDurationStats();
+        model.addAttribute("totalDurationFormatted", formatMinutes(vo.getTotalMinutes()));
+        model.addAttribute("yearDurationFormatted", formatMinutes(vo.getYearMinutes()));
+        model.addAttribute("monthDurationFormatted", formatMinutes(vo.getMonthMinutes()));
+        model.addAttribute("weekDurationFormatted", formatMinutes(vo.getWeekMinutes()));
+        model.addAttribute("todayDurationFormatted", formatMinutes(vo.getTodayMinutes()));
+
 
         // 将数据传递到Thymeleaf模板
         // 转化为JSON 字符串
@@ -154,6 +163,12 @@ public class WebController {
         return "test"; // 返回 Thymeleaf 模板
     }
 
+    private String formatMinutes(Integer minutes) {
+        if (minutes == null) return "00h 00m";
+        int hours = minutes / 60;
+        int mins = minutes % 60;
+        return String.format("%02dh %02dm", hours, mins);
+    }
 
     @GetMapping("/login")
     public String login() {

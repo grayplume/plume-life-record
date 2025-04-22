@@ -9,6 +9,7 @@ import com.plume.plrtime.pojo.Statistics;
 import com.plume.plrtime.pojo.TimeRecords;
 import com.plume.plrtime.pojo.vo.ActivityDurationVO;
 import com.plume.plrtime.pojo.vo.StatisticsVO;
+import com.plume.plrtime.pojo.vo.UserDurationStatsVO;
 import com.plume.plrtime.service.ActivitiesService;
 import com.plume.plrtime.service.StatisticsService;
 import com.plume.plrtime.mapper.StatisticsMapper;
@@ -104,6 +105,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     @Override
     public List<ActivityDurationVO> getTodayActivityDurations() {
         return statisticsMapper.selectTodayActivityDuration();
+    }
+
+    @Override
+    public UserDurationStatsVO getUserDurationStats() {
+        return statisticsMapper.selectUserDurationStats("3");
     }
 }
 
