@@ -8,12 +8,15 @@ import com.plume.plrtime.pojo.Activities;
 import com.plume.plrtime.pojo.Statistics;
 import com.plume.plrtime.pojo.TimeRecords;
 import com.plume.plrtime.pojo.vo.ActivityDurationVO;
+import com.plume.plrtime.pojo.vo.LoginUser;
 import com.plume.plrtime.pojo.vo.StatisticsVO;
 import com.plume.plrtime.pojo.vo.UserDurationStatsVO;
 import com.plume.plrtime.service.ActivitiesService;
 import com.plume.plrtime.service.StatisticsService;
 import com.plume.plrtime.mapper.StatisticsMapper;
 import com.plume.plrtime.service.TimeRecordsService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -109,7 +112,10 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
 
     @Override
     public UserDurationStatsVO getUserDurationStats() {
-        return statisticsMapper.selectUserDurationStats("3");
+        // 获取当前用户id
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+        return statisticsMapper.selectUserDurationStats(loginUser.getUser().getUserId().toString());
     }
 }
 
