@@ -87,6 +87,8 @@ public class SecurityConfig {
                     .maximumSessions(1)
                     .expiredSessionStrategy(new MySessionInformationExpiredStrategy());
         });
+        // 将 CorsConfigurationSource 手动应用于 HttpSecurity
+//        http.cors().configurationSource(corsConfigurationSource());
         return http.build();
     }
 

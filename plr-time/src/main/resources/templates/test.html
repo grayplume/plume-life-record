@@ -5,14 +5,14 @@
     <title>Test Page</title>
     <link rel="stylesheet" th:href="@{/navbar.css}">
     <style>
-        /* 给canvas元素添加固定的大小 */
-        canvas {
-            width: 90%;  /* 设置图表的宽度 */
-            height: auto; /* 设置图表的高度 */
-            margin: 0 auto;
-            position: relative;
+        /*!* 给canvas元素添加固定的大小 *!*/
+        /*canvas {*/
+        /*    width: 90%;  !* 设置图表的宽度 *!*/
+        /*    height: auto; !* 设置图表的高度 *!*/
+        /*    margin: 0 auto;*/
+        /*    position: relative;*/
 
-        }
+        /*}*/
 
         body{
             font-family: Arial, sans-serif;
@@ -24,7 +24,7 @@
 
          #pieChart {
              width: 100%;
-             max-width: 600px;
+             max-width: 800px;
              height: 400px;
              margin: 2rem auto;
          }
@@ -87,8 +87,8 @@
 <body>
 <div th:replace="~{navbar :: navbar}"></div>
 <h1>Welcome to the Test Page</h1>
-<h2>Today's Time</h2>
 
+<div id="weather">正在获取天气...</div>
 <h2>统计概览</h2>
 <div class="summary-container">
     <div class="summary-card">
@@ -113,7 +113,7 @@
     </div>
 </div>
 
-
+<h2>Today's Time</h2>
 <!-- 渲染 hourlyDuration 数据到 HTML 元素中 -->
 <div id="hourlyData" th:data-hourly-duration="${hourlyDurationJson}"></div>
 <div id="dailyDuration" th:data-daily-duration="${dailyDurationJson}"></div>
@@ -147,12 +147,12 @@
 <script th:inline="javascript">
     // 从 HTML 元素中获取 data-hourly-duration 属性数据，并解析为 JSON 对象
     const hourlyDuration = JSON.parse(document.getElementById('hourlyData').getAttribute('data-hourly-duration'));
-    console.log(hourlyDuration);  // 调试输出，查看数据是否正确
+    // console.log(hourlyDuration);  // 调试输出，查看数据是否正确
     // 获取某个具体日期的数据（例如最新的日期）
     const selectedDate = Object.keys(hourlyDuration)[0]; // 假设后端只返回一个日期
     const hourlyDurationElement = hourlyDuration[selectedDate];
 
-    console.log("Hourly Data for", selectedDate, hourlyDurationElement);
+    // console.log("Hourly Data for", selectedDate, hourlyDurationElement);
 
     // 创建一个包含 0-23 点的数组
     const hours = Array.from({length: 24}, (_, k) => k);
@@ -160,7 +160,7 @@
     // 填充每小时的活动时长数据（没有数据的默认 0）
     const data = hours.map(hour => hourlyDurationElement[hour] / 60 || 0);
 
-    console.log(data);
+    // console.log(data);
 
     // const hours = [...Array(24).keys()].map(h => h + ":00");  // 示例：["0:00", "1:00", ...]
     // const data = [5, 10, 15, 22, 45, 50, 60, 40, 25, 18, 10, 8, 0, 5, 10, 20, 25, 30, 50, 60, 40, 30, 15, 10];
@@ -209,17 +209,19 @@
     };
 
     chart1.setOption(option1);
-
-
+    // 响应式处理
+    window.addEventListener('resize', () => {
+        chart1.resize();
+    });
 
 
     // 获取从 Thymeleaf 模板传递的 JSON 数据
     const dailyDurationRaw = document.getElementById('dailyDuration').getAttribute('data-daily-duration');
-    console.log("Raw dailyDuration data: ", dailyDurationRaw);  // 打印原始数据
+    // console.log("Raw dailyDuration data: ", dailyDurationRaw);  // 打印原始数据
 
     // 解析 JSON 数据
     const dailyDuration = JSON.parse(dailyDurationRaw);
-    console.log("Parsed dailyDuration: ", dailyDuration);  // 打印解析后的数据
+    // console.log("Parsed dailyDuration: ", dailyDuration);  // 打印解析后的数据
 
     // 提取日期和学习时长
     const dates = dailyDuration.map(function (record) {
@@ -232,8 +234,8 @@
         return record[Object.keys(record)[0]] / 60 / 60;  // 取出学习时长（value）
     });
 
-    console.log("Dates: ", dates);  // 输出日期数组
-    console.log("Durations: ", durations);  // 输出学习时长数组
+    // console.log("Dates: ", dates);  // 输出日期数组
+    // console.log("Durations: ", durations);  // 输出学习时长数组
 
 
     // 创建图表
@@ -283,6 +285,10 @@
     };
 
     chart2.setOption(option2);
+    // 响应式处理
+    window.addEventListener('resize', () => {
+        chart2.resize();
+    });
 
 
     // 从 Thymeleaf 获取后端传递的数据
@@ -291,7 +297,7 @@
 
     var pieData = JSON.parse(/*[[${todayActivityDurationsJson}]]*/ '[]');
 
-    console.log("Parsed dayActivityDurations: ", pieData);
+    // console.log("Parsed dayActivityDurations: ", pieData);
 
     // 初始化 ECharts 实例
     var chart = echarts.init(document.getElementById('pieChart'));
@@ -308,7 +314,7 @@
     } else {
         var option = {
             title: {
-                text: '今日活动时间分布（点击可复制数据）',
+                text: '今日活动时间分布（点击复制）',
                 left: 'center',
                 top: 10,
                 textStyle: {
@@ -330,15 +336,15 @@
                 left: 'left',
                 top: 'middle',
                 textStyle: {
-                    fontSize: 14
+                    fontSize: 12
                 }
             },
             series: [{
                 name: '活动时长',
                 type: 'pie',
-                radius: [20, 100],
+                radius: [10, 100],
                 center: ['50%', '60%'],
-                roseType: 'radius',
+                roseType: 'area',
                 label: {
                     show: true,
                     fontSize: 12
@@ -354,7 +360,7 @@
                 },
                 data: pieData.map(item => ({
                     name: item.activityName,
-                    value: (item.totalDurationToday/60).toFixed(2)
+                    value: (item.totalDurationToday / 60).toFixed(2)
                 }))
             }]
         };
@@ -373,7 +379,7 @@
                 const totalRemainingMinutes = (totalMinutes % 60).toFixed(0);
 
                 // 构建复制的文本，包含活动记录和总时间，使用 Markdown 格式
-                const text = `### 今日活动记录\n\n**总时长:** ${totalHours}h ${totalRemainingMinutes}m\n\n` +
+                const text = `## ` + getFormattedDate() + `  ` + weatherText + `\n ### 今日活动记录\n\n**总时长:** ${totalHours}h ${totalRemainingMinutes}m\n\n` +
                     pieData.map(item => {
                         const hours = Math.floor(item.totalDurationToday / 3600);
                         const minutes = Math.floor((item.totalDurationToday % 3600) / 60);
@@ -419,6 +425,54 @@
         chart.resize();
     });
 
+    // 获取当前日期
+    function getFormattedDate() {
+        const now = new Date();
+
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份从0开始
+        const date = String(now.getDate()).padStart(2, '0');
+
+        const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+        const day = weekDays[now.getDay()];
+
+        return `${year}年${month}月${date}日  周${day}`;
+    }
+
+    let weatherText = "";
+
+    // 获取浏览器定位
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            const lat = Number(pos.coords.latitude.toFixed(2));
+            const lon = Number(pos.coords.longitude.toFixed(2));
+            console.log('定位成功', lat, lon);
+
+            // 向后端发送请求获取天气
+            getWeatherByLocation(lat, lon);
+        },
+        (err) => {
+            console.error('定位失败', err);
+            weatherText = '定位失败，无法获取天气';  // 定位失败时更新 weatherText
+            document.getElementById('weather').textContent = weatherText; // 更新页面
+        }
+    );
+
+    // 后端 API 请求
+    function getWeatherByLocation(lat, lon) {
+        fetch(`/getWeatherByLocation?lat=${lat}&lon=${lon}`)
+            .then(res => res.text())  // 由于后端返回的是字符串格式的数据
+            .then(data => {
+                weatherText = data;  // 将返回的天气信息赋值给 weatherText
+                console.log(weatherText);  // 输出到控制台
+                document.getElementById('weather').textContent = weatherText;  // 更新页面上的天气信息
+            })
+            .catch(err => {
+                console.error(err);
+                weatherText = '获取天气信息失败';  // 如果请求失败，更新 weatherText
+                document.getElementById('weather').textContent = weatherText; // 更新页面
+            });
+    }
 
     // var chart3 = echarts.init(document.getElementById('calendarHeatmap'));
     //
