@@ -2,6 +2,7 @@ package com.plume.plrtime.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,8 +20,11 @@ import java.util.zip.GZIPInputStream;
 @RestController
 public class WeatherController {
 
-    private final String weatherApiKey = "5123b83956b04ca4b7ccb9cf14f9c953";
-    private final String weatherBaseUrl = "https://n37p3v7cgw.re.qweatherapi.com";
+    @Value("${weather.api-key}")
+    private String weatherApiKey;
+
+    @Value("${weather.base-url}")
+    private String weatherBaseUrl;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @GetMapping("/getWeatherByLocation")
