@@ -52,115 +52,61 @@ public class WebController {
 
     @GetMapping("/test")
     public String showTodayTimeDistribution(Model model) throws JsonProcessingException {
+        // 获取学习记录
         List<TimeRecords> list = timeRecordsService.list();
 
-        // 计算每小时的总时长（按日期区分）
+        // 初始化数据结构
         Map<LocalDate, Map<Integer, Integer>> dailyHourlyDuration = new HashMap<>();
-
-        for (TimeRecords stat : list) {
-            LocalDate date = stat.getStartTime().toLocalDate();
-            int hour = stat.getStartTime().getHour();
-            int minute = stat.getStartTime().getMinute();
-            int second = stat.getStartTime().getSecond();
-            int duration = stat.getDuration(); // 总时长（秒）
-
-            LocalDateTime endTime = stat.getStartTime().plusSeconds(duration);
-            LocalDate endDate = endTime.toLocalDate();
-
-            // 只计算 **今天** 及 **跨天延续到今天的**
-            if (date.equals(LocalDate.now()) || endDate.equals(LocalDate.now())) {
-                while (duration > 0) {
-                    // 获取当前小时还剩多少秒
-                    int remainingTimeInHour = 3600 - (minute * 60 + second);
-
-                    // 计算本小时内最多能加多少秒
-                    int timeToAdd = Math.min(duration, remainingTimeInHour);
-
-                    // 记录时间到当前日期和小时
-                    dailyHourlyDuration
-                            .computeIfAbsent(date, k -> new HashMap<>())  // 如果当天没有数据，初始化
-                            .merge(hour, timeToAdd, Integer::sum);  // 累加到当前小时
-
-                    // 更新剩余时间
-                    duration -= timeToAdd;
-
-                    // 进入下一个小时
-                    if (duration > 0) {
-                        hour = (hour + 1) % 24;  // 小时进位
-
-                        // 如果到了 00:00，说明跨天了，日期也要变
-                        if (hour == 0) {
-                            date = date.plusDays(1); // 日期加一天
-                        }
-
-                        // 从新小时的 0 分钟 0 秒开始
-                        minute = 0;
-                        second = 0;
-                    }
-                }
-            }
-        }
-
-        //计算当月
-        // 获取当前日期
-        LocalDate now = LocalDate.now();
-        // 获取一个月前的日期
-        LocalDate oneMonthAgo = now.minusMonths(1);
-        // 初始化一个Map来存储每日学习时长
         Map<LocalDate, Integer> dailyDuration = new HashMap<>();
+        LocalDate now = LocalDate.now();
+        LocalDate oneMonthAgo = now.minusMonths(1);
 
-        LocalDate current = oneMonthAgo;
-        while (!current.isAfter(now)) {
-            dailyDuration.putIfAbsent(current, 0);  // 填充缺失日期
-            current = current.plusDays(1);
-        }
+        // 填充日期映射
+        fillMissingDates(dailyDuration, oneMonthAgo, now);
 
-        // 遍历学习记录
+        // 遍历记录，计算每日和每小时的时长
         for (TimeRecords stat : list) {
             LocalDateTime startTime = stat.getStartTime();
             LocalDate date = startTime.toLocalDate();
-            // 只处理最近一个月内的数据
+            int duration = stat.getDuration();
+
+            // 处理今日及跨天数据
+            if (isTodayOrCrossDay(startTime, duration)) {
+                calculateHourlyDuration(startTime, duration, date, dailyHourlyDuration);
+            }
+
+            // 处理一个月内的每日总时长
             if (!date.isBefore(oneMonthAgo) && !date.isAfter(now)) {
-                // 累加每天的学习时长
-                int duration = stat.getDuration();
                 dailyDuration.put(date, dailyDuration.getOrDefault(date, 0) + duration);
             }
         }
-        // 按照日期排序
-        List<Map.Entry<LocalDate, Integer>> sortedList = new ArrayList<>(dailyDuration.entrySet());
-        sortedList.sort(Map.Entry.comparingByKey());
 
+        // 排序每日时长
+        List<Map.Entry<LocalDate, Integer>> sortedDailyDuration = sortByDate(dailyDuration);
 
-
-        // 今日时间分布
+        // 获取今日活动时长
         List<ActivityDurationVO> todayActivityDurations = statisticsService.getTodayActivityDurations();
-        String json = new ObjectMapper().writeValueAsString(todayActivityDurations);
-        model.addAttribute("todayActivityDurationsJson", json);
-        System.out.println("json = " + json);
+        String todayActivityJson = new ObjectMapper().writeValueAsString(todayActivityDurations);
+        model.addAttribute("todayActivityDurationsJson", todayActivityJson);
 
-        // 统计用户总时长
-        UserDurationStatsVO vo = statisticsService.getUserDurationStats();
-        model.addAttribute("totalDurationFormatted", formatMinutes(vo.getTotalMinutes()));
-        model.addAttribute("yearDurationFormatted", formatMinutes(vo.getYearMinutes()));
-        model.addAttribute("monthDurationFormatted", formatMinutes(vo.getMonthMinutes()));
-        model.addAttribute("weekDurationFormatted", formatMinutes(vo.getWeekMinutes()));
-        model.addAttribute("todayDurationFormatted", formatMinutes(vo.getTodayMinutes()));
+        // 获取用户总时长
+        UserDurationStatsVO userDurationStats = statisticsService.getUserDurationStats();
+        model.addAttribute("totalDurationFormatted", formatMinutes(userDurationStats.getTotalMinutes()));
+        model.addAttribute("yearDurationFormatted", formatMinutes(userDurationStats.getYearMinutes()));
+        model.addAttribute("monthDurationFormatted", formatMinutes(userDurationStats.getMonthMinutes()));
+        model.addAttribute("weekDurationFormatted", formatMinutes(userDurationStats.getWeekMinutes()));
+        model.addAttribute("todayDurationFormatted", formatMinutes(userDurationStats.getTodayMinutes()));
 
-
-        // 将数据传递到Thymeleaf模板
-        // 转化为JSON 字符串
-        ObjectMapper objectMapper2 = new ObjectMapper();
-        String dailyDurationJson = objectMapper2.writeValueAsString(sortedList);
-//        System.out.println(dailyDurationJson);
+        // 将每日时长转为JSON
+        String dailyDurationJson = new ObjectMapper().writeValueAsString(sortedDailyDuration);
         model.addAttribute("dailyDurationJson", dailyDurationJson);
 
-
-        // 将 hourlyDuration 转换为 JSON 字符串并传递给前端
-        ObjectMapper objectMapper = new ObjectMapper();
-        String hourlyDurationJson = objectMapper.writeValueAsString(dailyHourlyDuration);
+        // 将每小时时长转为JSON
+        String hourlyDurationJson = new ObjectMapper().writeValueAsString(dailyHourlyDuration);
         model.addAttribute("hourlyDurationJson", hourlyDurationJson);
 
         return "test"; // 返回 Thymeleaf 模板
+
     }
 
     private String formatMinutes(Integer minutes) {
@@ -178,7 +124,6 @@ public class WebController {
     @GetMapping("/")
     public String info(Model model) {
         System.out.println("index controller");
-
         // 获取当前认证上下文
         SecurityContext context = SecurityContextHolder.getContext();
         Authentication authentication = context.getAuthentication();
@@ -187,16 +132,12 @@ public class WebController {
         // 获取当前认证用户的相关信息
         String username = authentication.getName();  // 用户名
 
-
-
         // 打印认证信息
         System.out.println("Username: " + username);
-
         System.out.println("============");
         System.out.println(loginUser.getUser().getUserId()+loginUser.getUser().getUsername());
         // 将用户名添加到 Model 中
         model.addAttribute("username", username);
-
         // 返回视图名称，Thymeleaf 会根据视图名称渲染页面
         return "info";
     }
@@ -206,32 +147,27 @@ public class WebController {
     @GetMapping("/index")
     public String index(Model model) {
         List<Activities> activitiesList = activitiesService.list();
-
         List<StatisticsVO> statisticsVOS = statisticsService.show();
-        // 将信息转换成activityId,duration的map
-        Map<Integer, Integer> activityIdDurationMap = statisticsVOS.stream()
-                .collect(java.util.stream.Collectors.toMap(StatisticsVO::getActivityId, StatisticsVO::getTotalDuration));
 
-        // 根据statisticsVOS将activitiesList排序
+        // 构建三个 Map：duration、status、order
+        Map<Integer, Integer> activityIdDurationMap = new HashMap<>();
+        Map<Integer, Integer> activityIdStatusMap = new HashMap<>();
         Map<Integer, Integer> activityIdOrderMap = new HashMap<>();
+
         for (int i = 0; i < statisticsVOS.size(); i++) {
-            activityIdOrderMap.put(statisticsVOS.get(i).getActivityId(), i);
+            StatisticsVO stat = statisticsVOS.get(i);
+            int activityId = stat.getActivityId();
+            activityIdDurationMap.put(activityId, stat.getTotalDuration());
+            activityIdStatusMap.put(activityId, stat.getStatus());
+            activityIdOrderMap.put(activityId, i); // 排序用下标
         }
-
-        activitiesList.sort((a1, a2) -> {
-            Integer index1 = activityIdOrderMap.getOrDefault(a1.getActivityId(), Integer.MAX_VALUE);
-            Integer index2 = activityIdOrderMap.getOrDefault(a2.getActivityId(), Integer.MAX_VALUE);
-            return index1.compareTo(index2);
-        });
-
-
+        // 根据 order map 排序 activitiesList
+        activitiesList.sort(Comparator.comparingInt(a ->
+                activityIdOrderMap.getOrDefault(a.getActivityId(), Integer.MAX_VALUE)
+        ));
+        // 添加到 model
         model.addAttribute("activitiesList", activitiesList);
-
         model.addAttribute("statisticsVOS", activityIdDurationMap);
-
-        // 将信息转换成activityId,status的map
-        Map<Integer, Integer> activityIdStatusMap = statisticsVOS.stream()
-                .collect(java.util.stream.Collectors.toMap(StatisticsVO::getActivityId, StatisticsVO::getStatus));
         model.addAttribute("activityIdStatusMap", activityIdStatusMap);
 
         return "index";
@@ -239,33 +175,87 @@ public class WebController {
 
     @GetMapping("/activity")
     public String activity(Model model) {
+        // 获取活动列表和统计数据
         List<Activities> activitiesList = activitiesService.list();
-
-
         List<StatisticsVO> statisticsVOS = statisticsService.show();
-        // 将信息转换成activityId,duration的map
-        Map<Integer, Integer> activityIdDurationMap = statisticsVOS.stream()
-                .collect(java.util.stream.Collectors.toMap(StatisticsVO::getActivityId, StatisticsVO::getTotalDuration));
 
-        // 根据statisticsVOS将activitiesList排序
-        Map<Integer, Integer> activityIdOrderMap = new HashMap<>();
+        // 构建 ID → Duration、Order Map
+        Map<Integer, Integer> activityDurationMap = new HashMap<>();
+        Map<Integer, Integer> activityOrderMap = new HashMap<>();
+
         for (int i = 0; i < statisticsVOS.size(); i++) {
-            activityIdOrderMap.put(statisticsVOS.get(i).getActivityId(), i);
+            StatisticsVO stat = statisticsVOS.get(i);
+            int activityId = stat.getActivityId();
+            activityDurationMap.put(activityId, stat.getTotalDuration());
+            activityOrderMap.put(activityId, i); // 排序下标
         }
 
-        activitiesList.sort((a1, a2) -> {
-            Integer index1 = activityIdOrderMap.getOrDefault(a1.getActivityId(), Integer.MAX_VALUE);
-            Integer index2 = activityIdOrderMap.getOrDefault(a2.getActivityId(), Integer.MAX_VALUE);
-            return index1.compareTo(index2);
-        });
+        // 排序 activitiesList：按统计顺序排序，没统计数据的排后面
+        activitiesList.sort(Comparator.comparingInt(a ->
+                activityOrderMap.getOrDefault(a.getActivityId(), Integer.MAX_VALUE)
+        ));
 
-        // 获取当前用户的认证信息
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+        // 获取当前登录用户信息
+        LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
+        // 添加到模型
         model.addAttribute("activitiesList", activitiesList);
+        model.addAttribute("statisticsVOS", activityDurationMap);
         model.addAttribute("uid", loginUser.getUser().getUserId());
-        model.addAttribute("statisticsVOS", activityIdDurationMap);
+
         return "activity";
+
     }
+
+    // 填充一个月内的所有日期
+    private void fillMissingDates(Map<LocalDate, Integer> dailyDuration, LocalDate startDate, LocalDate endDate) {
+        LocalDate current = startDate;
+        while (!current.isAfter(endDate)) {
+            dailyDuration.putIfAbsent(current, 0);  // 填充缺失日期
+            current = current.plusDays(1);
+        }
+    }
+
+    // 判断是否是今天或跨天
+    private boolean isTodayOrCrossDay(LocalDateTime startTime, int duration) {
+        LocalDate date = startTime.toLocalDate();
+        LocalDateTime endTime = startTime.plusSeconds(duration);
+        return date.equals(LocalDate.now()) || endTime.toLocalDate().equals(LocalDate.now());
+    }
+
+    // 计算每小时的时长
+    private void calculateHourlyDuration(LocalDateTime startTime, int duration, LocalDate date, Map<LocalDate, Map<Integer, Integer>> dailyHourlyDuration) {
+        int hour = startTime.getHour();
+        int minute = startTime.getMinute();
+        int second = startTime.getSecond();
+
+        while (duration > 0) {
+            int remainingTimeInHour = 3600 - (minute * 60 + second);
+            int timeToAdd = Math.min(duration, remainingTimeInHour);
+
+            dailyHourlyDuration
+                    .computeIfAbsent(date, k -> new HashMap<>())
+                    .merge(hour, timeToAdd, Integer::sum);
+
+            duration -= timeToAdd;
+
+            // 进入下一个小时
+            if (duration > 0) {
+                hour = (hour + 1) % 24;
+                if (hour == 0) {
+                    date = date.plusDays(1);
+                }
+                minute = 0;
+                second = 0;
+            }
+        }
+    }
+
+    // 按日期排序
+    private List<Map.Entry<LocalDate, Integer>> sortByDate(Map<LocalDate, Integer> dailyDuration) {
+        List<Map.Entry<LocalDate, Integer>> sortedList = new ArrayList<>(dailyDuration.entrySet());
+        sortedList.sort(Map.Entry.comparingByKey());
+        return sortedList;
+    }
+
 }
