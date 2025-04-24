@@ -87,6 +87,9 @@ public class SecurityConfig {
                     .maximumSessions(1)
                     .expiredSessionStrategy(new MySessionInformationExpiredStrategy());
         });
+        http
+                .requiresChannel()
+                .anyRequest().requiresSecure(); // 强制所有请求使用 HTTPS
         // 将 CorsConfigurationSource 手动应用于 HttpSecurity
 //        http.cors().configurationSource(corsConfigurationSource());
         return http.build();

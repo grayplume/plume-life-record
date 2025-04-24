@@ -22,25 +22,76 @@
             u.user_id,
             u.username,
 
-            -- 总计时
+            -- ✅ 总计时（用 duration 本身，不跨天）
             IFNULL(SUM(tr.duration) / 60, 0) AS total_minutes,
 
-            -- 今年
-            IFNULL(SUM(CASE WHEN YEAR(tr.start_time) = YEAR(CURDATE()) THEN tr.duration ELSE 0 END) / 60, 0) AS year_minutes,
+            -- ✅ 今年（1月1日 ~ 明年1月1日）
+            IFNULL(SUM(
+                           CASE
+                               WHEN tr.start_time IS NOT NULL AND tr.end_time IS NOT NULL THEN
+                                   GREATEST(
+                                           TIMESTAMPDIFF(
+                                               SECOND,
+                                                   GREATEST(tr.start_time, DATE_FORMAT(CURDATE(), '%Y-01-01')),
+                                                   LEAST(tr.end_time, DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 1 YEAR), '%Y-01-01'))
+                                           ),
+                                           0
+                                   )
+                               ELSE 0
+                               END
+                   ) / 60, 0) AS year_minutes,
 
-            -- 本月
-            IFNULL(SUM(CASE WHEN YEAR(tr.start_time) = YEAR(CURDATE()) AND MONTH(tr.start_time) = MONTH(CURDATE()) THEN tr.duration ELSE 0 END) / 60, 0) AS month_minutes,
+            -- ✅ 本月（本月1日 ~ 下月1日）
+            IFNULL(SUM(
+                           CASE
+                               WHEN tr.start_time IS NOT NULL AND tr.end_time IS NOT NULL THEN
+                                   GREATEST(
+                                           TIMESTAMPDIFF(
+                                               SECOND,
+                                                   GREATEST(tr.start_time, DATE_FORMAT(CURDATE(), '%Y-%m-01')),
+                                                   LEAST(tr.end_time, DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 1 MONTH), '%Y-%m-01'))
+                                           ),
+                                           0
+                                   )
+                               ELSE 0
+                               END
+                   ) / 60, 0) AS month_minutes,
 
-            -- 本周（周一开始）
-            IFNULL(SUM(CASE WHEN YEARWEEK(tr.start_time, 1) = YEARWEEK(CURDATE(), 1) THEN tr.duration ELSE 0 END) / 60, 0) AS week_minutes,
+            -- ✅ 本周（本周一 ~ 下周一）
+            IFNULL(SUM(
+                           CASE
+                               WHEN tr.start_time IS NOT NULL AND tr.end_time IS NOT NULL THEN
+                                   GREATEST(
+                                           TIMESTAMPDIFF(
+                                               SECOND,
+                                                   GREATEST(tr.start_time, DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)),
+                                                   LEAST(tr.end_time, DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 7 DAY))
+                                           ),
+                                           0
+                                   )
+                               ELSE 0
+                               END
+                   ) / 60, 0) AS week_minutes,
 
-            -- 今日
-            IFNULL(SUM(CASE WHEN DATE(tr.start_time) = CURDATE() THEN tr.duration ELSE 0 END) / 60, 0) AS today_minutes
+            -- ✅ 今日（今天0点 ~ 明天0点）
+            IFNULL(SUM(
+                           CASE
+                               WHEN tr.start_time IS NOT NULL AND tr.end_time IS NOT NULL THEN
+                                   GREATEST(
+                                           TIMESTAMPDIFF(
+                                               SECOND,
+                                                   GREATEST(tr.start_time, CURDATE()),
+                                                   LEAST(tr.end_time, DATE_ADD(CURDATE(), INTERVAL 1 DAY))
+                                           ),
+                                           0
+                                   )
+                               ELSE 0
+                               END
+                   ) / 60, 0) AS today_minutes
 
         FROM users u
                  LEFT JOIN time_records tr ON u.user_id = tr.user_id
-        WHERE u.user_id = #{userId} -- 替换为你实际的用户 ID
+        WHERE u.user_id = #{userId}
         GROUP BY u.user_id, u.username;
-
     </select>
 </mapper>
