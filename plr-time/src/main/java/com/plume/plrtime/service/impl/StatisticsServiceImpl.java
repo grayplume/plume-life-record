@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -106,8 +107,8 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     }
 
     @Override
-    public List<ActivityDurationVO> getTodayActivityDurations() {
-        return statisticsMapper.selectTodayActivityDuration();
+    public List<ActivityDurationVO> getActivityDurationsByDate(LocalDate date) {
+        return statisticsMapper.selectActivityDurationByDate(date);
     }
 
     @Override

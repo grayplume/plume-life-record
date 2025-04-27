@@ -6,6 +6,7 @@ import com.plume.plrtime.pojo.vo.ActivityDurationVO;
 import com.plume.plrtime.pojo.vo.StatisticsVO;
 import com.plume.plrtime.pojo.vo.UserDurationStatsVO;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -19,7 +20,7 @@ public interface StatisticsService extends IService<Statistics> {
 
     List<StatisticsVO> getByUserId(Integer userId);
 
-    List<ActivityDurationVO> getTodayActivityDurations();
+    List<ActivityDurationVO> getActivityDurationsByDate(LocalDate date);
 
     UserDurationStatsVO getUserDurationStats();
 }

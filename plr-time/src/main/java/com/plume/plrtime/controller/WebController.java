@@ -16,16 +16,15 @@ import com.plume.plrtime.service.ActivitiesService;
 import com.plume.plrtime.service.StatisticsService;
 import com.plume.plrtime.service.TimeRecordsService;
 import com.plume.plrtime.service.UsersService;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -85,9 +84,9 @@ public class WebController {
         List<Map.Entry<LocalDate, Integer>> sortedDailyDuration = sortByDate(dailyDuration);
 
         // 获取今日活动时长
-        List<ActivityDurationVO> todayActivityDurations = statisticsService.getTodayActivityDurations();
-        String todayActivityJson = new ObjectMapper().writeValueAsString(todayActivityDurations);
-        model.addAttribute("todayActivityDurationsJson", todayActivityJson);
+//        List<ActivityDurationVO> todayActivityDurations = statisticsService.getActivityDurationsByDate();
+//        String todayActivityJson = new ObjectMapper().writeValueAsString(todayActivityDurations);
+//        model.addAttribute("todayActivityDurationsJson", todayActivityJson);
 
         // 获取用户总时长
         UserDurationStatsVO userDurationStats = statisticsService.getUserDurationStats();
@@ -107,6 +106,13 @@ public class WebController {
 
         return "test"; // 返回 Thymeleaf 模板
 
+    }
+
+    @GetMapping("/duration/day")
+    @ResponseBody
+    public Result getActivityDurationByDate(@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
+        List<ActivityDurationVO> durations = statisticsService.getActivityDurationsByDate(date);
+        return Result.success(durations);
     }
 
     private String formatMinutes(Integer minutes) {

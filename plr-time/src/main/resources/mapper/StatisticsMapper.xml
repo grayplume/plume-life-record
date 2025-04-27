@@ -94,4 +94,23 @@
         WHERE u.user_id = #{userId}
         GROUP BY u.user_id, u.username;
     </select>
+    <select id="selectActivityDurationByDate" resultType="com.plume.plrtime.pojo.vo.ActivityDurationVO">
+       <![CDATA[
+        SELECT
+            a.name AS activity_name,
+            SUM(
+                    GREATEST(
+                            LEAST(UNIX_TIMESTAMP(t.end_time), UNIX_TIMESTAMP(#{date} + INTERVAL 1 DAY)) -
+                            GREATEST(UNIX_TIMESTAMP(t.start_time), UNIX_TIMESTAMP(#{date})),
+                            0
+                    )
+            ) AS total_duration_today
+        FROM time_records t
+                 JOIN activities a ON t.activity_id = a.activity_id
+        WHERE t.start_time < #{date} + INTERVAL 1 DAY
+          AND t.end_time > #{date}
+        GROUP BY a.activity_id;
+        ]]>
+ </select>
+
 </mapper>
