@@ -78,7 +78,7 @@ public class WeatherController {
 
     public String getWeather(@RequestParam String locationId) throws IOException {
         // 构建获取实时天气的URL
-        String url = String.format("https://n37p3v7cgw.re.qweatherapi.com/v7/weather/now?location=%s", locationId);
+        String url = String.format("%s/v7/weather/3d?location=%s", weatherBaseUrl, locationId);
 
         // 1. 构造请求头
         HttpHeaders headers = new HttpHeaders();
@@ -111,18 +111,28 @@ public class WeatherController {
                 // 5. 解析 JSON 获取天气信息
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode rootNode = objectMapper.readTree(jsonResponse);
-                JsonNode nowNode = rootNode.path("now");
+//                JsonNode nowNode = rootNode.path("now");
+//                // 获取天气数据
+//                String weather = nowNode.path("text").asText(); // 天气描述
+//                String temp = nowNode.path("temp").asText(); // 温度
+//                String windDir = nowNode.path("windDir").asText(); // 风向
+//                String windSpeed = nowNode.path("windSpeed").asText(); // 风速
+//                String humidity = nowNode.path("humidity").asText(); // 湿度
 
-                // 获取天气数据
-                String weather = nowNode.path("text").asText(); // 天气描述
-                String temp = nowNode.path("temp").asText(); // 温度
-                String windDir = nowNode.path("windDir").asText(); // 风向
-                String windSpeed = nowNode.path("windSpeed").asText(); // 风速
-                String humidity = nowNode.path("humidity").asText(); // 湿度
+                //  获取最近几天天气，以及每日的的最高最低温度
+                JsonNode dailyNode = rootNode.path("daily");
+                // 获取今天数据
+                if (dailyNode.isEmpty()) {
+                    return "无法获取天气数据";
+                }
+                JsonNode todayNode = dailyNode.get(0);
+                String weather = todayNode.path("textDay").asText();
+                String tempMax = todayNode.path("tempMax").asText();
+                String tempMin = todayNode.path("tempMin").asText();
 
                 // 6. 返回天气信息
                 return String.format("%s %s℃",
-                        weather, temp);
+                        weather, tempMax+"/"+tempMin);
             }
         }
 

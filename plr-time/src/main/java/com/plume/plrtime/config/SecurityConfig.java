@@ -84,7 +84,7 @@ public class SecurityConfig {
         //会话管理
         http.sessionManagement(session -> {
             session
-                    .maximumSessions(1)
+                    .maximumSessions(2)
                     .expiredSessionStrategy(new MySessionInformationExpiredStrategy());
         });
         http

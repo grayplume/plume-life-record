@@ -5,14 +5,6 @@
     <title>Test Page</title>
     <link rel="stylesheet" th:href="@{/navbar.css}">
     <style>
-        /*!* 给canvas元素添加固定的大小 *!*/
-        /*canvas {*/
-        /*    width: 90%;  !* 设置图表的宽度 *!*/
-        /*    height: auto; !* 设置图表的高度 *!*/
-        /*    margin: 0 auto;*/
-        /*    position: relative;*/
-
-        /*}*/
 
         body{
             font-family: Arial, sans-serif;
@@ -120,6 +112,15 @@
 <!--<div id="selected-date" style="margin-top: 20px;">选择的日期会显示在这里</div>-->
 <div id="pieChart" style="width: 100%; height: 400px;"></div>
 
+<h3 style="text-align: center; margin: 2rem auto 1rem; font-size: 1.2rem; color: #333;">
+    🏆 当日活动排行榜
+</h3>
+<div id="activity-ranking"
+     style="max-width: 100%; margin: 0 auto; padding: 1rem 1.5rem;
+            background-color: #fafafa; border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); font-family: 'Segoe UI', sans-serif;">
+</div>
+
 <!-- 渲染 hourlyDuration 数据到 HTML 元素中 -->
 <div id="hourlyData" th:data-hourly-duration="${hourlyDurationJson}"></div>
 <div id="dailyDuration" th:data-daily-duration="${dailyDurationJson}"></div>
@@ -140,12 +141,6 @@
                      box-sizing: border-box;">
     </textarea>
 </div>
-
-
-
-<!--<div id="calendarHeatmap" style="width: 100%; height: 300px;"></div>-->
-
-
 
 <!-- 引入 ECharts 主库 -->
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
@@ -351,6 +346,7 @@
                 console.log("data："+data); // 输出到控制台
                 console.log("activityData："+JSON.stringify(activityData, null, 2)); // 输出到控制台
                 updatePieChartWithActivityData()
+                renderActivityRanking(activityData);
             })
             .catch(err => {
                 console.error(err);
@@ -362,6 +358,9 @@
 
     // 初始化 ECharts 实例
     var chart = echarts.init(document.getElementById('pieChart'));
+
+    // 在全局范围添加
+    let hasAlerted = false;
 
     function updatePieChartWithActivityData() {
         // 隐藏加载动画
@@ -379,7 +378,7 @@
         } else {
             var option = {
                 title: {
-                    text: '今日活动时间分布（点击复制）',
+                    text: '当日活动时间分布（点击复制）',
                     left: 'center',
                     top: 10,
                     textStyle: {
@@ -397,6 +396,7 @@
                     formatter: '{b}：{c} 分钟 ({d}%)'
                 },
                 legend: {
+                    show: false,
                     orient: 'vertical',
                     left: 'left',
                     top: 'middle',
@@ -407,12 +407,12 @@
                 series: [{
                     name: '活动时长',
                     type: 'pie',
-                    radius: [10, 100],
+                    radius: [0, 100],
                     center: ['50%', '60%'],
-                    roseType: 'area',
+                    // roseType: 'area',
                     label: {
                         show: true,
-                        fontSize: 12
+                        fontSize: 12,
                     },
                     labelLine: {
                         smooth: 0.2,
@@ -434,6 +434,7 @@
 
             // 标题点击复制事件
             chart.getZr().on('click', function (params) {
+                if (hasAlerted) return;
                 const isClickOnTitle = params.offsetY <= 50; // 你可以根据实际位置调整范围
                 if (isClickOnTitle) {
                     // 计算总时间（分钟）
@@ -471,6 +472,8 @@
 
                     if (success) {
                         alert("复制成功！");
+                        hasAlerted = true;
+                        setTimeout(() => hasAlerted = false, 1000); // 1秒后重置
                     } else {
                         alert("复制失败，请手动选中复制");
                     }
@@ -532,6 +535,38 @@
                 document.getElementById('weather').textContent = weatherText; // 更新页面
             });
     }
+
+    function renderActivityRanking(data) {
+        const container = document.getElementById('activity-ranking');
+        container.innerHTML = ''; // 清空旧内容
+
+        // 按照活动时间从大到小排序
+        const sorted = [...data].sort((a, b) => b.totalDurationToday - a.totalDurationToday);
+
+        // 构建 HTML 列表
+        sorted.forEach((item, index) => {
+            const durationMin = Math.floor(item.totalDurationToday / 60);
+            const durationStr = `${Math.floor(durationMin / 60)}h ${durationMin % 60}m`;
+
+            const row = document.createElement('div');
+            row.style.padding = '0.6rem 0.4rem';
+            row.style.borderBottom = '1px solid #eee';
+
+            row.innerHTML = `
+                <div style="display: flex; justify-content: space-between; color: #333;">
+                    <div><strong>${index + 1}.</strong> ${item.activityName}</div>
+                    <div style="color: #0e7c7b;">${durationStr}</div>
+                </div>
+                <div style="margin-top: 0.3rem; font-size: 0.85rem; color: #888;">
+                    本周时长：<span style="color: #555;">-- h -- m</span> <!-- 占位符 -->
+                </div>
+            `;
+
+            container.appendChild(row);
+        });
+
+    }
+
 
     // var chart3 = echarts.init(document.getElementById('calendarHeatmap'));
     //

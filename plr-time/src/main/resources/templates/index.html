@@ -58,31 +58,6 @@
         .status-2 { background-color: #868585; } /* Grey for status 2 */
         .status-3 { background-color: #f44336; } /* Red for status 3 */
 
-        .status-1 {
-            background: #4CAF50;
-            position: relative;
-            overflow: hidden;
-
-            &::before {
-                content: "";
-                position: absolute;
-                bottom: 0;
-                left: -50%;
-                height: 2px;
-                width: 200%;
-                background: linear-gradient(90deg,
-                transparent,
-                rgba(255,255,255,0.6),
-                transparent);
-                animation: subtleFlow 2s infinite linear;
-            }
-        }
-
-        @keyframes subtleFlow {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
 
 
         .action-button {
@@ -95,6 +70,7 @@
             border-radius: 5px;
             margin-right: 5px;
             transition: background-color 0.3s;
+            width: 66px;
         }
 
         .action-button:hover {
@@ -151,8 +127,8 @@
         </td>
 
         <td>
-            <button class="action-button" th:attr="onclick='startTimer(' + ${activity.activityId} + ', ' + ${activity.userId} + ')'" >Start Timer</button>
-            <button class="action-button" th:attr="onclick='endTimer(' + ${activity.activityId} + ', ' + ${activity.userId} + ')'" >End Timer</button>
+            <button class="action-button" th:attr="onclick='startTimer(' + ${activity.activityId} + ', ' + ${activity.userId} + ')'" >START</button>
+            <button class="action-button" th:attr="onclick='endTimer(' + ${activity.activityId} + ', ' + ${activity.userId} + ')'" >END</button>
         </td>
     </tr>
     </tbody>
