@@ -105,7 +105,7 @@ public class WebController {
         String hourlyDurationJson = new ObjectMapper().writeValueAsString(dailyHourlyDuration);
         model.addAttribute("hourlyDurationJson", hourlyDurationJson);
 
-        return "oldtest"; // 返回 Thymeleaf 模板
+        return "/pages/test"; // 返回 Thymeleaf 模板
 
     }
 
