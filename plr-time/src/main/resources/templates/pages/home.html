@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}" lang="ch">
+<head>
+    <title>欢迎来到我的系统</title>
+</head>
+<body>
+<!-- 主内容区域 -->
+<div layout:fragment="content">
+    <!-- 英雄区域 -->
+    <section class="hero-section bg-light py-5 mb-4">
+        <div class="container text-center">
+            <h1 class="display-4 fw-bold">欢迎来到我的系统</h1>
+            <p class="lead">一个基于Spring Boot和Bootstrap构建的现代化Web应用</p>
+<!--            <a th:href="@{/register}" class="btn btn-primary btn-lg mt-3">-->
+<!--                立即注册 <i class="fas fa-arrow-right ms-2"></i>-->
+<!--            </a>-->
+        </div>
+    </section>
+
+    <!-- 特性展示 -->
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-bolt text-primary mb-3" style="font-size: 2.5rem;"></i>
+                    <h3 class="card-title">快速高效</h3>
+                    <p class="card-text">基于Spring Boot框架，提供卓越的性能和响应速度。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-shield-alt text-success mb-3" style="font-size: 2.5rem;"></i>
+                    <h3 class="card-title">安全可靠</h3>
+                    <p class="card-text">集成Spring Security，提供全面的安全保护。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-mobile-alt text-info mb-3" style="font-size: 2.5rem;"></i>
+                    <h3 class="card-title">响应式设计</h3>
+                    <p class="card-text">使用Bootstrap 5，完美适配各种设备屏幕。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

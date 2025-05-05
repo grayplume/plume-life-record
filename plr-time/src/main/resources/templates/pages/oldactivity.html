@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}" lang="ch">
+<head>
+    <title>Activities Management</title>
+
+    <!-- 仅添加样式部分 -->
+    <style>
+        .activity-management {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+
+        .activity-form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        }
+
+        .submit-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .submit-button:hover {
+            background-color: #218838;
+        }
+
+        .activity-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .activity-table th {
+            background-color: #343a40;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        .activity-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .activity-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .activity-table tr:hover {
+            background-color: #e9ecef;
+        }
+
+        .action-button {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            margin-right: 5px;
+            transition: all 0.3s;
+        }
+
+        .edit-btn {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background-color: #138496;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+<!-- 主内容区域 - 保持原有结构和数据不变 -->
+<div layout:fragment="content">
+    <div class="activity-management">
+        <h2>Activities Management</h2>
+
+        <div class="activity-form">
+            <div class="form-group">
+                <label for="newActivityName">Activity Name:</label>
+                <input type="text" id="newActivityName" placeholder="Enter activity name">
+            </div>
+            <div class="form-group">
+                <label for="newActivityUserId">User ID:</label>
+                <input type="number" id="newActivityUserId" placeholder="Enter user ID" th:value="${uid}" readonly>
+            </div>
+            <button id="activityButton" class="submit-button" onclick="addActivity()">Add Activity</button>
+            <input type="hidden" id="editingActivityId">
+        </div>
+
+        <table class="activity-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>UID</th>
+                <th>Name</th>
+                <th>Time</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="activity : ${activitiesList}">
+                <td th:text="${activity.activityId}"></td>
+                <td th:text="${activity.userId}"></td>
+                <td th:text="${activity.name}"></td>
+                <td th:with="totalMinutes=${statisticsVOS[activity.activityId]} ?: 0,
+                        hours=${totalMinutes / 60},
+                        minutes=${totalMinutes % 60}"
+                    th:text="${hours > 0 ? (minutes > 0 ? hours + ' h ' + minutes + ' m' : hours + ' h') : minutes + ' m'}">
+                </td>
+                <td>
+                    <button class="action-button edit-btn"
+                            th:attr="onclick='editActivity(' + ${activity.activityId} + ', ' + ${activity.userId} + ', \'' + ${activity.name} + '\')'">
+                        Edit
+                    </button>
+                    <button class="action-button delete-btn"
+                            th:attr="onclick='deleteActivity(' + ${activity.activityId} + ')'">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 保持原有JavaScript不变 -->
+<script>
+    function addActivity() {
+        const activityId = document.getElementById('editingActivityId').value;
+        const name = document.getElementById('newActivityName').value;
+        const userId = document.getElementById('newActivityUserId').value;
+
+        if (!name || !userId) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        if (activityId) {
+            $.ajax({
+                url: '/activity/update',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({activityId: parseInt(activityId), userId: parseInt(userId), name: name}),
+                success: function(response) {
+                    alert('Activity updated: ' + response.code);
+                    resetForm();
+                    location.reload();
+                },
+                error: function(error) {
+                    alert('Error updating activity: ' + error.responseText);
+                }
+            });
+        } else {
+            $.ajax({
+                url: '/activity/save',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({userId: parseInt(userId), name: name}),
+                success: function(response) {
+                    alert('Activity added: ' + response.code);
+                    resetForm();
+                    location.reload();
+                },
+                error: function(error) {
+                    alert('Error adding activity: ' + error.responseText);
+                }
+            });
+        }
+    }
+
+    function editActivity(activityId, userId, name) {
+        document.getElementById('newActivityName').value = name;
+        document.getElementById('newActivityUserId').value = userId;
+        document.getElementById('editingActivityId').value = activityId;
+        document.getElementById('activityButton').innerText = "Update Activity";
+    }
+
+    function resetForm() {
+        document.getElementById('newActivityName').value = "";
+        document.getElementById('newActivityUserId').value = "3";
+        document.getElementById('editingActivityId').value = "";
+        document.getElementById('activityButton').innerText = "Add Activity";
+    }
+
+    function deleteActivity(activityId) {
+        if (!confirm('Are you sure you want to delete this activity?')) {
+            return;
+        }
+
+        $.ajax({
+            url: '/activity/delete/' + activityId,
+            type: 'POST',
+            success: function(response) {
+                alert('Activity deleted: ' + response.code);
+                location.reload();
+            },
+            error: function(error) {
+                alert('Error deleting activity: ' + error.responseText);
+            }
+        });
+    }
+</script>
+</body>
+</html>

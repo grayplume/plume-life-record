@@ -1,13 +1,11 @@
 package com.plume.plrtime.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.plume.plrtime.common.Result;
 import com.plume.plrtime.mapper.UsersMapper;
 import com.plume.plrtime.pojo.Activities;
 import com.plume.plrtime.pojo.TimeRecords;
-import com.plume.plrtime.pojo.Users;
 import com.plume.plrtime.pojo.vo.ActivityDurationVO;
 import com.plume.plrtime.pojo.vo.LoginUser;
 import com.plume.plrtime.pojo.vo.StatisticsVO;
@@ -17,9 +15,7 @@ import com.plume.plrtime.service.StatisticsService;
 import com.plume.plrtime.service.TimeRecordsService;
 import com.plume.plrtime.service.UsersService;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -29,7 +25,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/web")
@@ -47,6 +42,12 @@ public class WebController {
         this.timeRecordsService = timeRecordsService;
         this.usersService = usersService;
         this.usersMapper = usersMapper;
+    }
+
+
+    @GetMapping("/home")
+    public String home(Model model) {
+        return "/pages/home";
     }
 
     @GetMapping("/test")
@@ -104,7 +105,7 @@ public class WebController {
         String hourlyDurationJson = new ObjectMapper().writeValueAsString(dailyHourlyDuration);
         model.addAttribute("hourlyDurationJson", hourlyDurationJson);
 
-        return "test"; // 返回 Thymeleaf 模板
+        return "oldtest"; // 返回 Thymeleaf 模板
 
     }
 
@@ -176,7 +177,7 @@ public class WebController {
         model.addAttribute("statisticsVOS", activityIdDurationMap);
         model.addAttribute("activityIdStatusMap", activityIdStatusMap);
 
-        return "index";
+        return "/pages/index";
     }
 
     @GetMapping("/activity")
@@ -209,7 +210,7 @@ public class WebController {
         model.addAttribute("statisticsVOS", activityDurationMap);
         model.addAttribute("uid", loginUser.getUser().getUserId());
 
-        return "activity";
+        return "/pages/activity";
 
     }
 

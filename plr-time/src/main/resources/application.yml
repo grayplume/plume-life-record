@@ -14,7 +14,20 @@ mybatis-plus:
 #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 server:
-  port: 8080
+  port: 8443  # 使用 8443 端口，通常用于 HTTPS
   servlet:
     session:
       timeout: 180m
+  ssl:
+    key-store: classpath:ssl/grayplume.icu.pfx  # 证书文件路径
+    key-store-password: ifs5pire  # 密码
+    key-store-type: PKCS12  # PFX 格式
+    key-alias: alias  # 如果有别名
+
+
+weather:
+  api-key: 5123b83956b04ca4b7ccb9cf14f9c953
+  base-url: https://n37p3v7cgw.re.qweatherapi.com
+
+
+

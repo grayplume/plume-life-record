@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}" lang="zh">
+<head>
+    <title>活动管理</title>
+    <style>
+        .activity-table th {
+            background-color: #4e73df;
+            color: #fff;
+            text-align: center;
+        }
+
+        .btn-edit {
+            background-color: #f6c23e;
+            border: none;
+            color: #fff;
+        }
+
+        .btn-delete {
+            background-color: #e74a3b;
+            border: none;
+            color: #fff;
+        }
+
+        .btn-edit:hover {
+            background-color: #e0b100;
+        }
+
+        .btn-delete:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <h1 class="h3 mb-4 text-gray-800">活动管理</h1>
+
+        <!-- 新增按钮 -->
+        <div class="mb-3 text-end">
+            <button class="btn btn-primary" onclick="openAddModal()">新增活动</button>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">活动列表</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered activity-table" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>活动名称</th>
+                            <th>描述</th>
+                            <th>时长</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="activity : ${activitiesList}">
+                            <td th:text="${activity.activityId}"></td>
+                            <td th:text="${activity.name}"></td>
+                            <td th:text="${activity.description}"></td>
+                            <td th:with="
+                                totalMinutes=${statisticsVOS[activity.activityId]} ?: 0,
+                                h=${totalMinutes / 60},
+                                m=${totalMinutes % 60}"
+                                th:text="${h > 0 ? (m > 0 ? h + ' h ' + m + ' m' : h + ' h') : m + ' m'}">
+                            </td>
+                            <td class="text-center">
+                                <a href="#" class="btn btn-sm btn-edit me-2"
+                                   onclick="editActivity(this)"
+                                   th:attr="data-id=${activity.activityId}, data-name=${activity.name}, data-desc=${activity.description}">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </a>
+                                <button type="button" class="btn btn-sm btn-delete"
+                                        th:attr="data-id=${activity.activityId}"
+                                        onclick="confirmDelete(this)">
+                                    <i class="fas fa-trash"></i> 删除
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：新增/编辑活动 -->
+    <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="activityForm" th:action="@{/activities/save}" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="activityModalLabel">新增活动</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="activityId" id="activityId">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">活动名称</label>
+                            <input type="text" class="form-control" name="name" id="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">描述</label>
+                            <textarea class="form-control" name="description" id="description" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div layout:fragment="scripts">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+
+        function openAddModal() {
+            document.getElementById('activityForm').reset();
+            document.getElementById('activityModalLabel').textContent = '新增活动';
+            document.getElementById('activityId').value = '';
+            modal.show();
+        }
+
+        function editActivity(btn) {
+            const id = btn.getAttribute('data-id');
+            const name = btn.getAttribute('data-name');
+            const desc = btn.getAttribute('data-desc');
+
+            document.getElementById('activityModalLabel').textContent = '编辑活动';
+            document.getElementById('activityId').value = id;
+            document.getElementById('name').value = name;
+            document.getElementById('description').value = desc;
+
+            modal.show();
+        }
+
+        function confirmDelete(btn) {
+            const activityId = btn.getAttribute('data-id');
+            if (confirm('确定要删除这个活动吗？')) {
+                $.ajax({
+                    url: '/activity/delete/' + activityId,
+                    type: 'POST',
+                    success: function(response) {
+                        alert('活动已删除: ' + response.code);
+                        location.reload();
+                    },
+                    error: function(error) {
+                        alert('删除失败: ' + error.responseText);
+                    }
+                });
+            }
+        }
+
+
+        function resetForm() {
+            $('#activityForm')[0].reset();
+            modal.hide();
+        }
+
+        // 表单拦截并用 AJAX 提交
+        $('#activityForm').on('submit', function (e) {
+            e.preventDefault();
+
+            const activityId = $('#activityId').val();
+            const name = $('#name').val();
+            const description = $('#description').val();
+            const userId = /* 在这里替换为实际的用户ID，例如从隐藏字段或全局变量中获取 */ 1;
+
+            const payload = {
+                userId: parseInt(userId),
+                name: name,
+                description: description
+            };
+
+            if (activityId) {
+                payload.activityId = parseInt(activityId);
+                $.ajax({
+                    url: '/activity/update',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (response) {
+                        alert('活动已更新: ' + response.code);
+                        resetForm();
+                        location.reload();
+                    },
+                    error: function (error) {
+                        alert('更新失败: ' + error.responseText);
+                    }
+                });
+            } else {
+                $.ajax({
+                    url: '/activity/save',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (response) {
+                        alert('活动已添加: ' + response.code);
+                        resetForm();
+                        location.reload();
+                    },
+                    error: function (error) {
+                        alert('添加失败: ' + error.responseText);
+                    }
+                });
+            }
+        });
+    </script>
+
+</div>
+</body>
+</html>

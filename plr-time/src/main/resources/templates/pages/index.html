@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}" lang="zh">
+<head>
+    <title>Activities Management</title>
+    <style>
+        /*body {*/
+        /*    font-family: Arial, sans-serif;*/
+        /*    background-color: #f4f7fa;*/
+        /*    margin: 20px;*/
+        /*    overflow-x: hidden;*/
+        /*}*/
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .table th, .table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .status {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 3px;
+            color: white;
+        }
+
+        .status-1 { background-color: #4CAF50; } /* Green */
+        .status-2 { background-color: #868585; } /* Grey */
+        .status-3 { background-color: #f44336; } /* Red */
+
+        .action-button {
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-right: 5px;
+            transition: background-color 0.3s;
+            width: 100px;
+            font-size: 14px;
+        }
+
+        .action-button:hover {
+            background-color: #005f7f;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .table {
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <h2>Time Management</h2>
+
+    <table class="table table-striped">
+        <thead class="thead-dark">
+        <tr>
+            <th>ID</th>
+            <th>UID</th>
+            <th>Name</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="activity : ${activitiesList}">
+            <td th:text="${activity.activityId}"></td>
+            <td th:text="${activity.userId}"></td>
+            <td th:text="${activity.name}"></td>
+
+            <td th:with="totalMinutes=${statisticsVOS[activity.activityId]} ?: 0,
+                        hours=${totalMinutes / 60},
+                        minutes=${totalMinutes % 60}"
+                th:text="${hours > 0 ? (minutes > 0 ? hours + ' h ' + minutes + ' m' : hours + ' h') : minutes + ' m'}">
+            </td>
+
+            <td>
+                <span th:class="${activityIdStatusMap[activity.activityId] == 1 ? 'status status-1' :
+                        activityIdStatusMap[activity.activityId] == 0 ? 'status status-2' : 'status status-3'}"
+                      th:text="${activityIdStatusMap[activity.activityId] == 1 ? 'ON' : activityIdStatusMap[activity.activityId] == 0 ? 'OFF' : 'UNKNOWN'}">
+                </span>
+            </td>
+
+            <td>
+                <button class="action-button"
+                        th:onclick="'startTimer(' + ${activity.activityId} + ',' + ${activity.userId} + ')'">START</button>
+                <button class="action-button"
+                        th:onclick="'endTimer(' + ${activity.activityId} + ',' + ${activity.userId} + ')'">END</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div layout:fragment="scripts">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- JavaScript 必须在页面末尾，确保函数能在调用前定义 -->
+    <script>
+        console.log('Page loaded');
+        function startTimer(activityId, userId) {
+            console.log('StartTimer called with activityId:', activityId, 'userId:', userId);
+            $.ajax({
+                url: '/timeRecord/start',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({userId: userId, activityId: activityId}),
+                success: function(response) {
+                    console.log('Timer started successfully:', response);
+                    alert('Timer started: ' + response.data);
+                    window.location.reload();
+                },
+                error: function(error) {
+                    console.error('Error starting timer:', error);
+                    alert('Error starting timer: ' + error.responseText);
+                }
+            });
+        }
+
+        function endTimer(activityId, userId) {
+            console.log('EndTimer called with activityId:', activityId, 'userId:', userId);
+            $.ajax({
+                url: '/timeRecord/end',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({userId: userId, activityId: activityId}),
+                success: function(response) {
+                    console.log('Timer ended successfully:', response);
+                    alert('Timer ended: ' + response.data);
+                    window.location.reload();
+                },
+                error: function(error) {
+                    console.error('Error ending timer:', error);
+                    alert('Error ending timer: ' + error.responseText);
+                }
+            });
+        }
+    </script>
+</div>
+</body>
+</html>
