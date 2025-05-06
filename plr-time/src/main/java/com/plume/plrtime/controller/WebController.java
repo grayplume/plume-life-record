@@ -47,7 +47,7 @@ public class WebController {
 
     @GetMapping("/home")
     public String home(Model model) {
-        return "/pages/home";
+        return "pages/home";
     }
 
     @GetMapping("/test")
@@ -105,7 +105,7 @@ public class WebController {
         String hourlyDurationJson = new ObjectMapper().writeValueAsString(dailyHourlyDuration);
         model.addAttribute("hourlyDurationJson", hourlyDurationJson);
 
-        return "/pages/test"; // 返回 Thymeleaf 模板
+        return "pages/test"; // 返回 Thymeleaf 模板
 
     }
 
@@ -177,7 +177,7 @@ public class WebController {
         model.addAttribute("statisticsVOS", activityIdDurationMap);
         model.addAttribute("activityIdStatusMap", activityIdStatusMap);
 
-        return "/pages/index";
+        return "pages/index";
     }
 
     @GetMapping("/activity")
@@ -210,7 +210,7 @@ public class WebController {
         model.addAttribute("statisticsVOS", activityDurationMap);
         model.addAttribute("uid", loginUser.getUser().getUserId());
 
-        return "/pages/activity";
+        return "pages/activity";
 
     }
 

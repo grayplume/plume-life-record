@@ -26,7 +26,11 @@
     <div class="alert alert-info">
         默认内容区域 - 应该被具体页面内容替换
     </div>
+
 </main>
+
+<!--提示-->
+<div th:replace="~{fragments/toast :: toast}"></div>
 
 <!-- 页脚 -->
 <!--<footer th:replace="fragments/footer :: footer" class="mt-auto"></footer>-->
@@ -35,7 +39,7 @@
 <!-- 公共脚本 -->
 <!--<div th:replace="fragments/scripts :: scripts"></div>-->
 <div th:replace="~{fragments/scripts :: scripts}"></div>
-
+<script th:src="@{/js/toast.js}"></script>
 <!-- 页面特定脚本 -->
 <div layout:fragment="scripts"></div>
 </body>

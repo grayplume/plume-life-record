@@ -473,11 +473,12 @@
           const success = document.execCommand("copy");
 
           if (success) {
-            alert("复制成功！");
+            // alert("复制成功！");
+            showToast('复制成功',"success" );
             hasAlerted = true;
             setTimeout(() => hasAlerted = false, 1000); // 1秒后重置
           } else {
-            alert("复制失败，请手动选中复制");
+            showToast('复制失败',"error" );
           }
         }
       });

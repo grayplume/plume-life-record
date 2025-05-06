@@ -124,6 +124,11 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+        modal._element.addEventListener('hide.bs.modal', () => {
+            if (document.activeElement) {
+                document.activeElement.blur();
+            }
+        });
 
         function openAddModal() {
             document.getElementById('activityForm').reset();
@@ -152,11 +157,16 @@
                     url: '/activity/delete/' + activityId,
                     type: 'POST',
                     success: function(response) {
-                        alert('活动已删除: ' + response.code);
-                        location.reload();
+                        // alert('活动已删除: ' + response.code);
+                        showToast('活动已删除',"warning" );
+                        // 在 3 秒后刷新页面
+                        setTimeout(function() {
+                            location.reload();
+                        }, 3000); // 3秒后刷新
                     },
                     error: function(error) {
-                        alert('删除失败: ' + error.responseText);
+                        // alert('删除失败: ' + error.responseText);
+                        showToast('删除失败',"error" );
                     }
                 });
             }
@@ -191,12 +201,16 @@
                     contentType: 'application/json',
                     data: JSON.stringify(payload),
                     success: function (response) {
-                        alert('活动已更新: ' + response.code);
                         resetForm();
-                        location.reload();
+                        showToast('活动已更新',"success" );
+                        // 在 3 秒后刷新页面
+                        setTimeout(function() {
+                            location.reload();
+                        }, 3000); // 3秒后刷新
+
                     },
                     error: function (error) {
-                        alert('更新失败: ' + error.responseText);
+                        showToast('更新失败 ' ,"error");
                     }
                 });
             } else {
@@ -205,13 +219,17 @@
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(payload),
-                    success: function (response) {
-                        alert('活动已添加: ' + response.code);
+                    success: function () {
+                        // alert('活动已添加: ' + response.code);
                         resetForm();
-                        location.reload();
+                        showToast('活动已添加',"success" );
+                        // 在 3 秒后刷新页面
+                        setTimeout(function() {
+                            location.reload();
+                        }, 3000); // 3秒后刷新
                     },
-                    error: function (error) {
-                        alert('添加失败: ' + error.responseText);
+                    error: function () {
+                        showToast('添加失败',"error" );
                     }
                 });
             }

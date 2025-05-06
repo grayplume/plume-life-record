@@ -122,12 +122,18 @@
                 data: JSON.stringify({userId: userId, activityId: activityId}),
                 success: function(response) {
                     console.log('Timer started successfully:', response);
-                    alert('Timer started: ' + response.data);
-                    window.location.reload();
+                    // alert('Timer started: ' + response.data);
+                    // window.location.reload();
+                    showToast('Timer started',"success" );
+                    // 在 3 秒后刷新页面
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000); // 3秒后刷新
                 },
                 error: function(error) {
                     console.error('Error starting timer:', error);
-                    alert('Error starting timer: ' + error.responseText);
+                    // alert('Error starting timer: ' + error.responseText);
+                    showToast('Error starting timer',"error" );
                 }
             });
         }
@@ -141,8 +147,12 @@
                 data: JSON.stringify({userId: userId, activityId: activityId}),
                 success: function(response) {
                     console.log('Timer ended successfully:', response);
-                    alert('Timer ended: ' + response.data);
-                    window.location.reload();
+                    // alert('Timer ended: ' + response.data);
+                    showToast('Timer ended',"success" );
+                    // 在 3 秒后刷新页面
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000); // 3秒后刷新
                 },
                 error: function(error) {
                     console.error('Error ending timer:', error);
