@@ -209,10 +209,10 @@
                     <thead>
                     <tr>
                         <th>ID</th>
-                        <th>名称</th>
-                        <th>描述</th>
-                        <th>时间</th>
-                        <th>操作</th>
+                        <th>Name</th>
+                        <th>Desc</th>
+                        <th>Time</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -227,7 +227,7 @@
                             th:text="${h > 0 ? (m > 0 ? h + ' h ' + m + ' m' : h + ' h') : m + ' m'}">
                         </td>
                         <td class="text-center">
-                            <a href="#" class="btn btn-sm btn-edit me-2"
+                            <a href="#" class="btn btn-sm btn-edit"
                                onclick="editActivity(this)"
                                th:attr="data-id=${activity.activityId}, data-name=${activity.name}, data-desc=${activity.description}">
                                 <i class="fas fa-edit"></i> 编辑
