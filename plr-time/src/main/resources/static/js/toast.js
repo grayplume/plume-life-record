@@ -14,6 +14,9 @@ function showToast(message, type = 'success') {
     } else if (type === 'warning') {
         title = '警告';
         headerClass = 'bg-warning text-dark';
+    } else if (type === 'success') {
+        title = '成功';
+        headerClass = 'bg-body-secondary text-dark'; // ✅ 改成灰色背景 + 黑字
     }
 
     const toast = document.createElement('div');
