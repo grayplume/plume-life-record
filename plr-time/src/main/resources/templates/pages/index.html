@@ -5,158 +5,223 @@
 <head>
     <title>Activities Management</title>
     <style>
-        /*body {*/
-        /*    font-family: Arial, sans-serif;*/
-        /*    background-color: #f4f7fa;*/
-        /*    margin: 20px;*/
-        /*    overflow-x: hidden;*/
-        /*}*/
+        /* 基础黑白风格 */
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #fafafa;
+            color: #333;
+            line-height: 1.6;
+        }
 
         h2 {
-            color: #333;
-            margin-bottom: 20px;
-            font-weight: 600;
+            color: #222;
+            margin-bottom: 24px;
+            font-weight: 500;
             text-align: center;
-        }
-
-        .table th, .table td {
-            text-align: center;
-            vertical-align: middle;
-        }
-
-        .status {
-            font-weight: bold;
-            padding: 5px 10px;
-            border-radius: 3px;
-            color: white;
-        }
-
-        .status-1 { background-color: #4CAF50; } /* Green */
-        .status-2 { background-color: #868585; } /* Grey */
-        .status-3 { background-color: #f44336; } /* Red */
-
-        .action-button {
-            background-color: #008CBA;
-            color: white;
-            border: none;
-            /*padding: 8px 12px;*/
-            text-align: center;
-            cursor: pointer;
-            border-radius: 5px;
-            margin-right: 5px;
-            transition: background-color 0.3s;
-            width: 60px;
-            height: 30px;
-            font-size: 14px;
-        }
-
-        .action-button:hover {
-            background-color: #005f7f;
-        }
-
-        .table tbody tr:hover {
-            background-color: #f1f1f1;
+            letter-spacing: 0.5px;
         }
 
         .table {
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .table th {
+            background-color: #f5f5f5;
+            color: #333;
+            font-weight: 500;
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
+        }
+
+        .table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        /* 状态标签 */
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .status-1 {
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .status-2 {
+            background-color: #e0e0e0;
+            color: #555;
+        }
+
+        .status-3 {
+            background-color: #333;
+            color: white;
+        }
+
+        /* 按钮样式 */
+        .action-button {
+            background: none;
+            border: 1px solid #ddd;
+            color: #333;
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-right: 5px;
+            outline: none;
+        }
+
+        .action-button:hover {
+            background-color: #f5f5f5;
+            border-color: #ccc;
+        }
+
+        .action-button:active {
+            background-color: #ebebeb;
+        }
+
+        /* 特殊按钮样式 */
+        .start-button {
+            border-color: #999;
+        }
+
+        .end-button {
+            border-color: #666;
+        }
+
+        /* 容器样式 */
+        .content-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .table {
+                display: block;
+                overflow-x: auto;
+            }
         }
     </style>
 </head>
 <body>
 <div layout:fragment="content">
+    <div class="content-container">
+        <h2>活动时间管理</h2>
 
-    <h2>Time Management</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>用户ID</th>
+                <th>活动名称</th>
+                <th>时间</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="activity : ${activitiesList}">
+                <td th:text="${activity.activityId}"></td>
+                <td th:text="${activity.userId}"></td>
+                <td th:text="${activity.name}"></td>
 
-    <table class="table table-striped">
-        <thead class="thead-dark">
-        <tr>
-            <th>ID</th>
-            <th>UID</th>
-            <th>Name</th>
-            <th>Time</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="activity : ${activitiesList}">
-            <td th:text="${activity.activityId}"></td>
-            <td th:text="${activity.userId}"></td>
-            <td th:text="${activity.name}"></td>
+                <td th:with="totalMinutes=${statisticsVOS[activity.activityId]} ?: 0,
+                            hours=${totalMinutes / 60},
+                            minutes=${totalMinutes % 60}"
+                    th:text="${hours > 0 ? (minutes > 0 ? hours + ' h ' + minutes + ' m' : hours + ' h') : minutes + ' m'}">
+                </td>
 
-            <td th:with="totalMinutes=${statisticsVOS[activity.activityId]} ?: 0,
-                        hours=${totalMinutes / 60},
-                        minutes=${totalMinutes % 60}"
-                th:text="${hours > 0 ? (minutes > 0 ? hours + ' h ' + minutes + ' m' : hours + ' h') : minutes + ' m'}">
-            </td>
+                <td>
+                    <span th:class="${activityIdStatusMap[activity.activityId] == 1 ? 'status status-1' :
+                            activityIdStatusMap[activity.activityId] == 0 ? 'status status-2' : 'status status-3'}"
+                          th:text="${activityIdStatusMap[activity.activityId] == 1 ? '进行中' :
+                                  activityIdStatusMap[activity.activityId] == 0 ? '已结束' : '未知'}">
+                    </span>
+                </td>
 
-            <td>
-                <span th:class="${activityIdStatusMap[activity.activityId] == 1 ? 'status status-1' :
-                        activityIdStatusMap[activity.activityId] == 0 ? 'status status-2' : 'status status-3'}"
-                      th:text="${activityIdStatusMap[activity.activityId] == 1 ? 'ON' : activityIdStatusMap[activity.activityId] == 0 ? 'OFF' : 'UNKNOWN'}">
-                </span>
-            </td>
-
-            <td>
-                <button class="action-button"
-                        th:onclick="'startTimer(' + ${activity.activityId} + ',' + ${activity.userId} + ')'">START</button>
-                <button class="action-button"
-                        th:onclick="'endTimer(' + ${activity.activityId} + ',' + ${activity.userId} + ')'">END</button>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+                <td>
+                    <button class="action-button start-button"
+                            th:onclick="'startTimer(' + ${activity.activityId} + ',' + ${activity.userId} + ')'">开始</button>
+                    <button class="action-button end-button"
+                            th:onclick="'endTimer(' + ${activity.activityId} + ',' + ${activity.userId} + ')'">结束</button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 <div layout:fragment="scripts">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- JavaScript 必须在页面末尾，确保函数能在调用前定义 -->
     <script>
-        console.log('Page loaded');
         function startTimer(activityId, userId) {
-            console.log('StartTimer called with activityId:', activityId, 'userId:', userId);
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = '处理中...';
+
             $.ajax({
                 url: '/timeRecord/start',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({userId: userId, activityId: activityId}),
                 success: function(response) {
-                    console.log('Timer started successfully:', response);
-                    // alert('Timer started: ' + response.data);
-                    // window.location.reload();
-                    showToast('Timer started',"success" );
-                    // 在 3 秒后刷新页面
+                    showToast('计时已开始', "success");
                     setTimeout(function() {
                         location.reload();
-                    }, 1000); // 3秒后刷新
+                    }, 1000);
                 },
                 error: function(error) {
-                    console.error('Error starting timer:', error);
-                    // alert('Error starting timer: ' + error.responseText);
-                    showToast('Error starting timer',"error" );
+                    showToast('开始计时时出错', "error");
+                    button.disabled = false;
+                    button.textContent = '开始';
+                },
+                complete: function() {
+                    // 无论成功失败都执行的操作
                 }
             });
         }
 
         function endTimer(activityId, userId) {
-            console.log('EndTimer called with activityId:', activityId, 'userId:', userId);
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = '处理中...';
+
             $.ajax({
                 url: '/timeRecord/end',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({userId: userId, activityId: activityId}),
                 success: function(response) {
-                    console.log('Timer ended successfully:', response);
-                    // alert('Timer ended: ' + response.data);
-                    showToast('Timer ended',"success" );
-                    // 在 3 秒后刷新页面
+                    showToast('计时已结束', "success");
                     setTimeout(function() {
                         location.reload();
-                    }, 1000); // 3秒后刷新
+                    }, 1000);
                 },
                 error: function(error) {
-                    console.error('Error ending timer:', error);
-                    alert('Error ending timer: ' + error.responseText);
+                    showToast('结束计时时出错', "error");
+                    button.disabled = false;
+                    button.textContent = '结束';
                 }
             });
         }
