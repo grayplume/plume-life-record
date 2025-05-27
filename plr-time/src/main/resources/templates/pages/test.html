@@ -145,7 +145,7 @@
 <div layout:fragment="scripts">
 <!-- 引入 ECharts 主库 -->
 <!--<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>-->
-<script th:src="@{/echarts.common.js}"></script>
+<script th:src="@{/echarts.min.js}"></script>
 <script th:inline="javascript">
   // 从 HTML 元素中获取 data-hourly-duration 属性数据，并解析为 JSON 对象
   const hourlyDuration = JSON.parse(document.getElementById('hourlyData').getAttribute('data-hourly-duration'));

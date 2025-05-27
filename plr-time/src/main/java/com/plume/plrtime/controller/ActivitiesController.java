@@ -3,7 +3,9 @@ package com.plume.plrtime.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.plume.plrtime.common.Result;
 import com.plume.plrtime.pojo.Activities;
+import com.plume.plrtime.pojo.vo.LoginUser;
 import com.plume.plrtime.service.ActivitiesService;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,7 +24,12 @@ public class ActivitiesController {
      */
     @GetMapping("/list")
     public Result list() {
-        return Result.success(activitiesService.list());
+        // 获取当前登录用户信息
+        LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        LambdaQueryWrapper<Activities> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(Activities::getUserId, loginUser.getUser().getUserId());
+        List<Activities> list = activitiesService.list(lambdaQueryWrapper);
+        return Result.success();
     }
 
     /**
@@ -30,6 +37,9 @@ public class ActivitiesController {
      */
     @PostMapping("/save")
     public Result save(@RequestBody Activities activity) {
+        // 获取当前登录用户信息
+        LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        activity.setUserId(loginUser.getUser().getUserId());
         activitiesService.save(activity);
         return Result.success();
     }

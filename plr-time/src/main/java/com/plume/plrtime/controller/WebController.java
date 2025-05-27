@@ -1,10 +1,12 @@
 package com.plume.plrtime.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.plume.plrtime.common.Result;
 import com.plume.plrtime.mapper.UsersMapper;
 import com.plume.plrtime.pojo.Activities;
+import com.plume.plrtime.pojo.Statistics;
 import com.plume.plrtime.pojo.TimeRecords;
 import com.plume.plrtime.pojo.vo.ActivityDurationVO;
 import com.plume.plrtime.pojo.vo.LoginUser;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/web")
@@ -153,7 +156,12 @@ public class WebController {
 
     @GetMapping("/index")
     public String index(Model model) {
-        List<Activities> activitiesList = activitiesService.list();
+        // 获取当前登录用户信息
+        LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        LambdaQueryWrapper<Activities> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(Activities::getUserId, loginUser.getUser().getUserId());
+
+        List<Activities> activitiesList = activitiesService.list(lambdaQueryWrapper);
         List<StatisticsVO> statisticsVOS = statisticsService.show();
 
         // 构建三个 Map：duration、status、order
@@ -182,9 +190,16 @@ public class WebController {
 
     @GetMapping("/activity")
     public String activity(Model model) {
+        // 获取当前登录用户信息
+        LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        LambdaQueryWrapper<Activities> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+        lambdaQueryWrapper.eq(Activities::getUserId, loginUser.getUser().getUserId());
+
+
         // 获取活动列表和统计数据
-        List<Activities> activitiesList = activitiesService.list();
+        List<Activities> activitiesList = activitiesService.list(lambdaQueryWrapper);
         List<StatisticsVO> statisticsVOS = statisticsService.show();
+
 
         // 构建 ID → Duration、Order Map
         Map<Integer, Integer> activityDurationMap = new HashMap<>();
@@ -202,8 +217,6 @@ public class WebController {
                 activityOrderMap.getOrDefault(a.getActivityId(), Integer.MAX_VALUE)
         ));
 
-        // 获取当前登录用户信息
-        LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         // 添加到模型
         model.addAttribute("activitiesList", activitiesList);

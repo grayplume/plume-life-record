@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.plume.plrtime.exception.BusinessException;
 import com.plume.plrtime.pojo.Activities;
 import com.plume.plrtime.pojo.Statistics;
-import com.plume.plrtime.pojo.TimeRecords;
 import com.plume.plrtime.pojo.vo.ActivityDurationVO;
 import com.plume.plrtime.pojo.vo.LoginUser;
 import com.plume.plrtime.pojo.vo.StatisticsVO;
@@ -14,7 +13,6 @@ import com.plume.plrtime.pojo.vo.UserDurationStatsVO;
 import com.plume.plrtime.service.ActivitiesService;
 import com.plume.plrtime.service.StatisticsService;
 import com.plume.plrtime.mapper.StatisticsMapper;
-import com.plume.plrtime.service.TimeRecordsService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -43,8 +41,11 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
 
     @Override
     public List<StatisticsVO> show() {
+        // 获取当前登录用户信息
+        LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        LambdaQueryWrapper<Statistics> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         // Step 1: 查询所有统计数据
-        List<Statistics> statisticsList = this.list();
+        List<Statistics> statisticsList = this.list(lambdaQueryWrapper);
 
         // Step 2: 提取所有 activityId
         List<Integer> activityIds = statisticsList.stream()
