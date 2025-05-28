@@ -234,6 +234,12 @@ public class WebController {
     return "pages/category";
     }
 
+    // 时间记录管理页面
+    @GetMapping("/timeRecords")
+    public String timeRecords(Model model) {
+        return "pages/timeRecords";
+    }
+
 
 
 

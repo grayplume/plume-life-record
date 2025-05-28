@@ -1,15 +1,14 @@
 package com.plume.plrtime.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.plume.plrtime.common.Result;
 import com.plume.plrtime.pojo.TimeRecords;
 import com.plume.plrtime.pojo.dto.TimeRequest;
 import com.plume.plrtime.service.TimeRecordsService;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
-
 @RestController
-@RequestMapping("/timeRecord")
+@RequestMapping("/timeRecords")
 public class TimeRecordsController {
 
     private final TimeRecordsService timeRecordsService;
@@ -25,31 +24,26 @@ public class TimeRecordsController {
     @GetMapping("/list")
     public Result list()
     {
-        return Result.success(timeRecordsService.list());
+        QueryWrapper<TimeRecords> wrapper = new QueryWrapper<>();
+        wrapper.orderByDesc("created_at").last("LIMIT 20");
+
+        return Result.success(timeRecordsService.list(wrapper));
     }
 
-    /**
-     * 开始时间记录
-     */
-    @PostMapping("/start")
-    public Result start(@RequestBody TimeRequest request) {
-
-        // 调用服务层方法开始计时
-        Boolean record = timeRecordsService.startTimer(request.getUserId(), request.getActivityId());
-        return Result.success(record);
-
+    @PostMapping("/save")
+    public Result save(@RequestBody TimeRecords record) {
+        return Result.success(timeRecordsService.save(record));
     }
 
-    /**
-     * 结束时间记录
-     */
-    @PostMapping("/end")
-    public Result end(@RequestBody TimeRequest request) {
-
-        // 调用服务层方法停止计时
-        Boolean b = timeRecordsService.endTimer(request.getUserId(), request.getActivityId());
-        return Result.success(b);
-
+    @PostMapping("/update")
+    public Result update(@RequestBody TimeRecords record) {
+        return Result.success(timeRecordsService.updateById(record));
     }
+
+    @PostMapping("/delete/{id}")
+    public Result delete(@PathVariable Long id) {
+        return Result.success(timeRecordsService.removeById(id));
+    }
+
 
 }

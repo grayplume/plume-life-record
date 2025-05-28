@@ -35,14 +35,18 @@
                 <table class="table" id="timeTable">
                     <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>用户ID</th>
-                        <th>活动ID</th>
-                        <th>开始时间</th>
-                        <th>结束时间</th>
-                        <th>耗时</th>
+                        <th>recordId</th>
+                        <th>userId</th>
+                        <th>activityId</th>
+                        <th>startTime</th>
+                        <th>endTime</th>
+                        <th>duration</th>
+                        <th>notes</th>
+                        <th>createdAt</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
+
                     <tbody>
                     <!-- 时间记录数据 JS 渲染 -->
                     </tbody>
@@ -50,6 +54,47 @@
             </div>
         </div>
     </div>
+    <!-- 模态框：新增/编辑记录 -->
+    <div class="modal fade" id="recordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="recordForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title">编辑时间记录</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="recordId">
+                        <div class="mb-3">
+                            <label>用户ID</label>
+                            <input type="number" class="form-control" id="userId" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>活动ID</label>
+                            <input type="number" class="form-control" id="activityId" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>开始时间</label>
+                            <input type="datetime-local" class="form-control" id="startTime">
+                        </div>
+                        <div class="mb-3">
+                            <label>结束时间</label>
+                            <input type="datetime-local" class="form-control" id="endTime">
+                        </div>
+                        <div class="mb-3">
+                            <label>备注</label>
+                            <input type="text" class="form-control" id="notes">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <div layout:fragment="scripts">
@@ -60,37 +105,104 @@
             return d.toLocaleString();
         }
 
-        function duration(start, end) {
-            if (!start || !end) return '';
-            const s = new Date(start).getTime();
-            const e = new Date(end).getTime();
-            const diffMin = Math.floor((e - s) / 1000 / 60);
-            return Math.floor(diffMin / 60) + 'h ' + (diffMin % 60) + 'm';
+        function formatDuration(seconds) {
+            if (!seconds || isNaN(seconds)) return '';
+            const min = Math.floor(seconds / 60);
+            const sec = seconds % 60;
+            return min + 'm ' + sec + 's';
         }
 
         function loadTimeRecords() {
-            $.get('/timeRecord/list', function (res) {
-                if (res.code === 200 || res.code === '200') {
+            $.get('/timeRecords/list', function (res) {
+                if (res.code === '200') {
                     const tbody = $('#timeTable tbody');
                     tbody.empty();
                     res.data.forEach(record => {
                         tbody.append(`
-                            <tr>
-                                <td>${record.recordId || ''}</td>
-                                <td>${record.userId}</td>
-                                <td>${record.activityId}</td>
-                                <td>${formatDate(record.startTime)}</td>
-                                <td>${formatDate(record.endTime)}</td>
-                                <td>${duration(record.startTime, record.endTime)}</td>
-                            </tr>
-                        `);
+                    <tr>
+                        <td>${record.recordId}</td>
+                        <td>${record.userId}</td>
+                        <td>${record.activityId}</td>
+                        <td>${formatDate(record.startTime)}</td>
+                        <td>${formatDate(record.endTime)}</td>
+                        <td>${formatDuration(record.duration)}</td>
+                        <td>${record.notes || ''}</td>
+                        <td>${formatDate(record.createdAt)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-edit" onclick="openEditModal(this)"
+                                    data-id="${record.recordId}"
+                                    data-user="${record.userId}"
+                                    data-activity="${record.activityId}"
+                                    data-start="${record.startTime}"
+                                    data-end="${record.endTime}"
+                                    data-notes="${record.notes || ''}">
+                                编辑
+                            </button>
+                            <button class="btn btn-sm btn-delete" onclick="deleteRecord(${record.recordId})">删除</button>
+                        </td>
+
+                    </tr>
+                `);
                     });
                 } else {
-                    alert('加载失败');
+                    alert('加载失败：' + res.msg);
                 }
             });
         }
+        const modal = new bootstrap.Modal(document.getElementById('recordModal'));
 
+        function openEditModal(btn) {
+            $('#recordId').val(btn.dataset.id || '');
+            $('#userId').val(btn.dataset.user || '');
+            $('#activityId').val(btn.dataset.activity || '');
+            $('#startTime').val(btn.dataset.start ? btn.dataset.start.substring(0, 16) : '');
+            $('#endTime').val(btn.dataset.end ? btn.dataset.end.substring(0, 16) : '');
+            $('#notes').val(btn.dataset.notes || '');
+            $('.modal-title').text(btn.dataset.id ? '编辑记录' : '新增记录');
+            modal.show();
+        }
+
+        $('#recordForm').on('submit', function (e) {
+            e.preventDefault();
+            const id = $('#recordId').val();
+            const payload = {
+                userId: parseInt($('#userId').val()),
+                activityId: parseInt($('#activityId').val()),
+                startTime: $('#startTime').val(),
+                endTime: $('#endTime').val(),
+                notes: $('#notes').val()
+            };
+            if (id) payload.recordId = parseInt(id);
+
+            $.ajax({
+                url: id ? '/timeRecords/update' : '/timeRecords/save',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function (res) {
+                    if (res.code === '200') {
+                        modal.hide();
+                        loadTimeRecords();
+                        alert(id ? '修改成功' : '添加成功');
+                    } else {
+                        alert('保存失败');
+                    }
+                }
+            });
+        });
+
+        function deleteRecord(id) {
+            if (confirm('确定要删除这条记录吗？')) {
+                $.post(`/timeRecords/delete/${id}`, function (res) {
+                    if (res.code === '200') {
+                        loadTimeRecords();
+                        alert('删除成功');
+                    } else {
+                        alert('删除失败');
+                    }
+                });
+            }
+        }
         $(function () {
             loadTimeRecords();
         });
