@@ -227,6 +227,16 @@ public class WebController {
 
     }
 
+
+    // 分类页面
+    @GetMapping("/category")
+    public String category(Model model) {
+    return "pages/category";
+    }
+
+
+
+
     // 填充一个月内的所有日期
     private void fillMissingDates(Map<LocalDate, Integer> dailyDuration, LocalDate startDate, LocalDate endDate) {
         LocalDate current = startDate;

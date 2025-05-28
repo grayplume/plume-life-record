@@ -210,7 +210,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
-                        <th>Desc</th>
+                        <th>Category</th>
                         <th>Time</th>
                         <th>Actions</th>
                     </tr>
@@ -219,7 +219,7 @@
                     <tr th:each="activity : ${activitiesList}">
                         <td th:text="${activity.activityId}"></td>
                         <td th:text="${activity.name}"></td>
-                        <td th:text="${activity.description}"></td>
+                        <td th:text="${activity.categoryId}"></td>
                         <td th:with="
                             totalMinutes=${statisticsVOS[activity.activityId]} ?: 0,
                             h=${totalMinutes / 60},
