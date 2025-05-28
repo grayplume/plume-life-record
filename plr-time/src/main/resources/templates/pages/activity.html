@@ -216,29 +216,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="activity : ${activitiesList}">
-                        <td th:text="${activity.activityId}"></td>
-                        <td th:text="${activity.name}"></td>
-                        <td th:text="${activity.categoryId}"></td>
-                        <td th:with="
-                            totalMinutes=${statisticsVOS[activity.activityId]} ?: 0,
-                            h=${totalMinutes / 60},
-                            m=${totalMinutes % 60}"
-                            th:text="${h > 0 ? (m > 0 ? h + ' h ' + m + ' m' : h + ' h') : m + ' m'}">
-                        </td>
-                        <td class="text-center">
-                            <a href="#" class="btn btn-sm btn-edit"
-                               onclick="editActivity(this)"
-                               th:attr="data-id=${activity.activityId}, data-name=${activity.name}, data-desc=${activity.description}">
-                                <i class="fas fa-edit"></i> 编辑
-                            </a>
-                            <button type="button" class="btn btn-sm btn-delete"
-                                    th:attr="data-id=${activity.activityId}"
-                                    onclick="confirmDelete(this)">
-                                <i class="fas fa-trash"></i> 删除
-                            </button>
-                        </td>
-                    </tr>
+
                     </tbody>
                 </table>
             </div>
@@ -249,7 +227,7 @@
     <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form id="activityForm" th:action="@{/activities/save}" method="post">
+                <form id="activityForm">
                     <div class="modal-header">
                         <h5 class="modal-title" id="activityModalLabel">新增活动</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
@@ -260,9 +238,12 @@
                             <label for="name" class="form-label">活动名称</label>
                             <input type="text" class="form-control" name="name" id="name" required>
                         </div>
+                        <!-- 分类下拉框 -->
                         <div class="mb-3">
-                            <label for="description" class="form-label">描述</label>
-                            <textarea class="form-control" name="description" id="description" rows="3"></textarea>
+                            <label for="activityType" class="form-label">分类</label>
+                            <select class="form-select" id="activityType" required>
+                                <!-- 分类选项动态填充 -->
+                            </select>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -291,18 +272,73 @@
             modal.show();
         }
 
+        function loadActivityList() {
+            console.log("loadActivityList")
+            $.get('/statistics/show', function (res) {
+                console.log(res);
+                if (res.code === '200') {
+                    const list = res.data;
+                    const tbody = $('#dataTable tbody');
+                    tbody.empty();
+
+                    list.forEach(activity => {
+                        tbody.append(`
+                        <tr>
+                        <td>${activity.activityId}</td>
+                        <td>${activity.activityName}</td>
+                        <td>${categoryMap[activity.categoryId] || '未知分类'}</td>
+                        <td>${Math.floor(activity.totalDuration/60)+'h '+activity.totalDuration%60+'m'}</td>
+                        <td class="text-center">
+                            <a href="#" class="btn btn-sm btn-edit"
+                               onclick="editActivity(this)"
+                               data-id="${activity.activityId}"
+                               data-name="${activity.activityName}"
+                               data-type="${activity.categoryId}">
+                                <i class="fas fa-edit"></i> 编辑
+                            </a>
+                            <button type="button" class="btn btn-sm btn-delete"
+                                    onclick="confirmDelete(this)"
+                                    data-id="${activity.activityId}">
+                                <i class="fas fa-trash"></i> 删除
+                            </button>
+                        </td>
+                    </tr>
+                    `);
+                    });
+                }
+            });
+        }
+
         function editActivity(btn) {
             const id = btn.getAttribute('data-id');
             const name = btn.getAttribute('data-name');
-            const desc = btn.getAttribute('data-desc');
+            const type = btn.getAttribute('data-type');
 
             document.getElementById('activityModalLabel').textContent = '编辑活动';
             document.getElementById('activityId').value = id;
             document.getElementById('name').value = name;
-            document.getElementById('description').value = desc;
+            document.getElementById('activityType').value = type;
+            // loadCategoryOptions(); // 页面加载时或每次打开模态框时调用
 
             modal.show();
         }
+
+        loadCategoryOptions()
+        let categoryMap = {};
+        function loadCategoryOptions() {
+            $.get('/category/list', function(res) {
+                if (res.code === '200') {
+                    const select = $('#activityType');
+                    select.empty();
+                    res.data.forEach(c => {
+                        select.append(`<option value="${c.categoryId}">${c.categoryName}</option>`);
+                        // 构建 ID → 名称 映射
+                        categoryMap[c.categoryId] = c.categoryName;
+                    });
+                }
+            });
+        }
+
 
         function confirmDelete(btn) {
             const activityId = btn.getAttribute('data-id');
@@ -334,13 +370,13 @@
 
             const activityId = $('#activityId').val();
             const name = $('#name').val();
-            const description = $('#description').val();
-            const userId = 1; // 替换为实际的用户ID
+            const categoryId = $('#activityType').val();
+            // const userId = 1; // 替换为实际的用户ID
 
             const payload = {
                 // userId: parseInt(userId),
                 name: name,
-                description: description
+                categoryId: parseInt(categoryId)
             };
 
             if (activityId) {
@@ -353,9 +389,10 @@
                     success: function (response) {
                         resetForm();
                         showToast('活动已更新',"success");
-                        setTimeout(function() {
-                            location.reload();
-                        }, 1000);
+                        loadActivityList();
+                        // setTimeout(function() {
+                        //     location.reload();
+                        // }, 1000);
                     },
                     error: function (error) {
                         showToast('更新失败',"error");
@@ -370,15 +407,16 @@
                     success: function () {
                         resetForm();
                         showToast('活动已添加',"success");
-                        setTimeout(function() {
-                            location.reload();
-                        }, 1000);
+                        loadActivityList()
                     },
                     error: function () {
                         showToast('添加失败',"error");
                     }
                 });
             }
+        });
+        $(function () {
+            loadActivityList();
         });
     </script>
 </div>

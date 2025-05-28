@@ -6,6 +6,7 @@ import lombok.Data;
 public class StatisticsVO {
     private Integer status;
     private Integer activityId;
+    private Integer categoryId;
     private String activityName;
     private Integer totalDuration;
 

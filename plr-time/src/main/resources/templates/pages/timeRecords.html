@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}" lang="zh">
+<head>
+    <title>时间记录管理</title>
+    <style>
+        .btn {
+            padding: 6px 12px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-refresh {
+            background-color: #f5f5f5;
+            border: 1px solid #ccc;
+        }
+        .btn-refresh:hover {
+            background-color: #e8e8e8;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <h2>时间记录管理</h2>
+
+        <!-- 刷新按钮 -->
+        <div class="mb-2 text-end">
+            <button class="btn btn-refresh" onclick="loadTimeRecords()">刷新</button>
+        </div>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table" id="timeTable">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户ID</th>
+                        <th>活动ID</th>
+                        <th>开始时间</th>
+                        <th>结束时间</th>
+                        <th>耗时</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <!-- 时间记录数据 JS 渲染 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div layout:fragment="scripts">
+    <script>
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toLocaleString();
+        }
+
+        function duration(start, end) {
+            if (!start || !end) return '';
+            const s = new Date(start).getTime();
+            const e = new Date(end).getTime();
+            const diffMin = Math.floor((e - s) / 1000 / 60);
+            return Math.floor(diffMin / 60) + 'h ' + (diffMin % 60) + 'm';
+        }
+
+        function loadTimeRecords() {
+            $.get('/timeRecord/list', function (res) {
+                if (res.code === 200 || res.code === '200') {
+                    const tbody = $('#timeTable tbody');
+                    tbody.empty();
+                    res.data.forEach(record => {
+                        tbody.append(`
+                            <tr>
+                                <td>${record.recordId || ''}</td>
+                                <td>${record.userId}</td>
+                                <td>${record.activityId}</td>
+                                <td>${formatDate(record.startTime)}</td>
+                                <td>${formatDate(record.endTime)}</td>
+                                <td>${duration(record.startTime, record.endTime)}</td>
+                            </tr>
+                        `);
+                    });
+                } else {
+                    alert('加载失败');
+                }
+            });
+        }
+
+        $(function () {
+            loadTimeRecords();
+        });
+    </script>
+</div>
+</body>
+</html>
