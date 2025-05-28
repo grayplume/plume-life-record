@@ -1,30 +1,47 @@
 
 ### sql文件
 
-```
+```sql
 create table activities
 (
-    activity_id int auto_increment
+    activity_id int auto_increment comment '活动ID'
         primary key,
-    user_id     int                                 not null,
-    name        varchar(100)                        not null,
-    description text                                null,
-    created_at  timestamp default CURRENT_TIMESTAMP null
+    user_id     int                                 not null comment '用户ID',
+    name        varchar(100)                        not null comment '活动名称',
+    description text                                null comment '活动描述',
+    created_at  timestamp default CURRENT_TIMESTAMP null comment '创建时间',
+    category_id int       default 1                 not null comment '活动分类D'
 );
 
 create index user_id
     on activities (user_id);
 
+create table activity_categories
+(
+    category_id   int auto_increment comment '活动分类id'
+        primary key,
+    category_name varchar(32) not null comment '分类名称'
+)
+    comment '活动分类表';
+
+alter table activities
+    add constraint activities_activity_categories_category_id_fk
+        foreign key (category_id) references activity_categories (category_id);
+
+alter table activity_categories
+    add constraint activity_categories_pk
+        unique (category_name);
+
 create table statistics
 (
-    stat_id        int auto_increment
+    stat_id        int auto_increment comment '统计ID'
         primary key,
-    user_id        int                                 not null,
-    activity_id    int                                 not null,
-    total_duration int                                 not null,
-    created_at     timestamp default CURRENT_TIMESTAMP null,
-    status         int       default 0                 not null comment '状态',
-    updated_at     timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP
+    user_id        int                                 not null comment '用户ID',
+    activity_id    int                                 not null comment '活动ID',
+    total_duration int                                 not null comment '总时长',
+    created_at     timestamp default CURRENT_TIMESTAMP null comment '创建时间',
+    status         int       default 0                 not null comment '状态  0未运行1运行中',
+    updated_at     timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '创建时间'
 );
 
 create index activity_id
@@ -40,15 +57,15 @@ alter table statistics
 
 create table time_records
 (
-    record_id   int auto_increment
+    record_id   int auto_increment comment '时间记录ID'
         primary key,
-    user_id     int                                 not null,
-    activity_id int                                 not null,
-    start_time  datetime                            not null,
-    end_time    datetime                            null,
-    duration    int                                 null,
-    notes       text                                null,
-    created_at  timestamp default CURRENT_TIMESTAMP null
+    user_id     int                                 not null comment '用户ID',
+    activity_id int                                 not null comment '活动ID',
+    start_time  datetime                            not null comment '开始时间',
+    end_time    datetime                            null comment '结束时间',
+    duration    int                                 null comment '持续时间',
+    notes       text                                null comment '备注',
+    created_at  timestamp default CURRENT_TIMESTAMP null comment '创建时间'
 );
 
 create index activity_id
@@ -64,12 +81,12 @@ alter table time_records
 
 create table users
 (
-    user_id       int auto_increment
+    user_id       int auto_increment comment '用户ID'
         primary key,
-    username      varchar(50)                         not null,
-    email         varchar(100)                        not null,
-    password_hash varchar(255)                        not null,
-    created_at    timestamp default CURRENT_TIMESTAMP null
+    username      varchar(50)                         not null comment '用户名称',
+    email         varchar(100)                        not null comment '邮箱',
+    password_hash varchar(255)                        not null comment '加密密码',
+    created_at    timestamp default CURRENT_TIMESTAMP null comment '创建时间'
 );
 
 alter table activities
@@ -94,5 +111,7 @@ alter table users
 alter table users
     add constraint username
         unique (username);
+
+
 ```
  
