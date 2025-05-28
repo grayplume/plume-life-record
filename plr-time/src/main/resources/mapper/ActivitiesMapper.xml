@@ -10,9 +10,10 @@
             <result property="name" column="name" />
             <result property="description" column="description" />
             <result property="createdAt" column="created_at" />
+            <result property="categoryId" column="category_id" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        activity_id,user_id,name,description,created_at
+        activity_id,user_id,name,description,created_at,category_id
     </sql>
 </mapper>

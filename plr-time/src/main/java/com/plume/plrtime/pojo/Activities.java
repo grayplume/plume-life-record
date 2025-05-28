@@ -15,28 +15,33 @@ import lombok.Data;
 @Data
 public class Activities {
     /**
-     * 
+     * 活动ID
      */
     @TableId(type = IdType.AUTO)
     private Integer activityId;
 
     /**
-     * 
+     * 用户ID
      */
     private Integer userId;
 
     /**
-     * 
+     * 活动名称
      */
     private String name;
 
     /**
-     * 
+     * 活动描述
      */
     private String description;
 
     /**
-     * 
+     * 创建时间
      */
     private Date createdAt;
+
+    /**
+     * 活动分类D
+     */
+    private Integer categoryId;
 }
