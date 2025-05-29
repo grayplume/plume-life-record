@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class TimeRequest {
-    private Long userId;
+//    private Long userId;
     private Long activityId;
 }

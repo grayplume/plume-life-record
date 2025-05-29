@@ -131,51 +131,66 @@
     <div class="content-container">
         <h2>活动时间管理</h2>
 
-        <table class="table">
+        <table class="table" id="dataTable">
             <thead>
             <tr>
                 <th>ID</th>
-                <th>UID</th>
-                <th>Name</th>
+                <th>AName</th>
+                <th>Category</th>
                 <th>Time</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
             </thead>
             <tbody>
-            <tr th:each="activity : ${activitiesList}">
-                <td th:text="${activity.activityId}"></td>
-                <td th:text="${activity.userId}"></td>
-                <td th:text="${activity.name}"></td>
-
-                <td th:with="totalMinutes=${statisticsVOS[activity.activityId]} ?: 0,
-                            hours=${totalMinutes / 60},
-                            minutes=${totalMinutes % 60}"
-                    th:text="${hours > 0 ? (minutes > 0 ? hours + ' h ' + minutes + ' m' : hours + ' h') : minutes + ' m'}">
-                </td>
-
-                <td>
-                    <span th:class="${activityIdStatusMap[activity.activityId] == 1 ? 'status status-1' :
-                            activityIdStatusMap[activity.activityId] == 0 ? 'status status-2' : 'status status-3'}"
-                          th:text="${activityIdStatusMap[activity.activityId] == 1 ? '进行中' :
-                                  activityIdStatusMap[activity.activityId] == 0 ? '已结束' : '未知'}">
-                    </span>
-                </td>
-
-                <td>
-                    <button class="action-button start-button"
-                            th:onclick="'startTimer(' + ${activity.activityId} + ',' + ${activity.userId} + ')'">开始</button>
-                    <button class="action-button end-button"
-                            th:onclick="'endTimer(' + ${activity.activityId} + ',' + ${activity.userId} + ')'">结束</button>
-                </td>
-            </tr>
+            <!--     动态添加       -->
             </tbody>
         </table>
     </div>
 </div>
 <div layout:fragment="scripts">
     <script>
-        function startTimer(activityId, userId) {
+
+        function loadActivityList() {
+            console.log("loadActivityList")
+            $.get('/statistics/show', function (res) {
+                console.log(res);
+                if (res.code === '200') {
+                    const list = res.data;
+                    const tbody = $('#dataTable tbody');
+                    tbody.empty();
+
+                    list.forEach(activity => {
+                        tbody.append(`
+                        <tr>
+                            <td>${activity.activityId}</td>
+                            <td>${activity.activityName}</td>
+                            <td>${activity.categoryId}</td>
+
+                            <td>${Math.floor(activity.totalDuration/60)+'h '+activity.totalDuration%60+'m'}</td>
+
+                            <td>
+                                <span class="${activity.status === 1 ? 'status status-1' :
+                                    activity.status === 0 ? 'status status-2' : 'status status-3'}">
+                                    ${activity.status === 1 ? '进行中' :
+                                    activity.status === 0 ? '已结束' : '未知'}
+                                </span>
+
+                            </td>
+                            <td>
+                                <button class="action-button start-button"
+                                        onclick="startTimer(${activity.activityId})">开始</button>
+                                <button class="action-button end-button"
+                                        onclick="endTimer(${activity.activityId})">结束</button>
+                            </td>
+                        </tr>
+                    `);
+                    });
+                }
+            });
+        }
+
+        function startTimer(activityId) {
             const button = event.target;
             button.disabled = true;
             button.textContent = '处理中...';
@@ -184,12 +199,10 @@
                 url: '/timeRecord/start',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({userId: userId, activityId: activityId}),
+                data: JSON.stringify({ activityId: activityId}),
                 success: function(response) {
                     showToast('计时已开始', "success");
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1000);
+                    loadActivityList()
                 },
                 error: function(error) {
                     showToast('开始计时时出错', "error");
@@ -202,7 +215,7 @@
             });
         }
 
-        function endTimer(activityId, userId) {
+        function endTimer(activityId) {
             const button = event.target;
             button.disabled = true;
             button.textContent = '处理中...';
@@ -211,12 +224,10 @@
                 url: '/timeRecord/end',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({userId: userId, activityId: activityId}),
+                data: JSON.stringify({ activityId: activityId}),
                 success: function(response) {
                     showToast('计时已结束', "success");
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1000);
+                    loadActivityList()
                 },
                 error: function(error) {
                     showToast('结束计时时出错', "error");
@@ -225,6 +236,9 @@
                 }
             });
         }
+        $(function () {
+            loadActivityList();
+        });
     </script>
 </div>
 </body>

@@ -188,47 +188,14 @@ public class WebController {
         return "pages/index";
     }
 
+    // 活动管理页面
     @GetMapping("/activity")
     public String activity(Model model) {
-        // 获取当前登录用户信息
-        LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        LambdaQueryWrapper<Activities> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(Activities::getUserId, loginUser.getUser().getUserId());
-
-
-        // 获取活动列表和统计数据
-        List<Activities> activitiesList = activitiesService.list(lambdaQueryWrapper);
-        List<StatisticsVO> statisticsVOS = statisticsService.show();
-
-
-        // 构建 ID → Duration、Order Map
-        Map<Integer, Integer> activityDurationMap = new HashMap<>();
-        Map<Integer, Integer> activityOrderMap = new HashMap<>();
-
-        for (int i = 0; i < statisticsVOS.size(); i++) {
-            StatisticsVO stat = statisticsVOS.get(i);
-            int activityId = stat.getActivityId();
-            activityDurationMap.put(activityId, stat.getTotalDuration());
-            activityOrderMap.put(activityId, i); // 排序下标
-        }
-
-        // 排序 activitiesList：按统计顺序排序，没统计数据的排后面
-        activitiesList.sort(Comparator.comparingInt(a ->
-                activityOrderMap.getOrDefault(a.getActivityId(), Integer.MAX_VALUE)
-        ));
-
-
-        // 添加到模型
-        model.addAttribute("activitiesList", activitiesList);
-        model.addAttribute("statisticsVOS", activityDurationMap);
-        model.addAttribute("uid", loginUser.getUser().getUserId());
-
         return "pages/activity";
-
     }
 
 
-    // 分类页面
+    // 分类管理页面
     @GetMapping("/category")
     public String category(Model model) {
     return "pages/category";

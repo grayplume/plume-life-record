@@ -2,7 +2,9 @@ package com.plume.plrtime.controller;
 
 import com.plume.plrtime.common.Result;
 import com.plume.plrtime.pojo.dto.TimeRequest;
+import com.plume.plrtime.pojo.vo.LoginUser;
 import com.plume.plrtime.service.TimeRecordsService;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -30,9 +32,10 @@ public class TimeRecordController {
      */
     @PostMapping("/start")
     public Result start(@RequestBody TimeRequest request) {
-
+        // 获取当前登录用户信息
+        LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         // 调用服务层方法开始计时
-        Boolean record = timeRecordsService.startTimer(request.getUserId(), request.getActivityId());
+        Boolean record = timeRecordsService.startTimer(Long.valueOf(loginUser.getUser().getUserId()), request.getActivityId());
         return Result.success(record);
 
     }
@@ -42,9 +45,10 @@ public class TimeRecordController {
      */
     @PostMapping("/end")
     public Result end(@RequestBody TimeRequest request) {
-
+        // 获取当前登录用户信息
+        LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         // 调用服务层方法停止计时
-        Boolean b = timeRecordsService.endTimer(request.getUserId(), request.getActivityId());
+        Boolean b = timeRecordsService.endTimer(Long.valueOf(loginUser.getUser().getUserId()), request.getActivityId());
         return Result.success(b);
 
     }
