@@ -7,6 +7,8 @@ import com.plume.plrtime.pojo.dto.TimeRequest;
 import com.plume.plrtime.service.TimeRecordsService;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
+
 @RestController
 @RequestMapping("/timeRecords")
 public class TimeRecordsController {
@@ -37,6 +39,7 @@ public class TimeRecordsController {
 
     @PostMapping("/update")
     public Result update(@RequestBody TimeRecords record) {
+        record.setDuration((int) Duration.between(record.getStartTime(),  record.getEndTime()).getSeconds());
         return Result.success(timeRecordsService.updateById(record));
     }
 
