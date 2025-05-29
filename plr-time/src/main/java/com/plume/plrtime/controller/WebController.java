@@ -154,37 +154,9 @@ public class WebController {
 
 
 
+    // 时间记录页面
     @GetMapping("/index")
     public String index(Model model) {
-        // 获取当前登录用户信息
-        LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        LambdaQueryWrapper<Activities> lambdaQueryWrapper = new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(Activities::getUserId, loginUser.getUser().getUserId());
-
-        List<Activities> activitiesList = activitiesService.list(lambdaQueryWrapper);
-        List<StatisticsVO> statisticsVOS = statisticsService.show();
-
-        // 构建三个 Map：duration、status、order
-        Map<Integer, Integer> activityIdDurationMap = new HashMap<>();
-        Map<Integer, Integer> activityIdStatusMap = new HashMap<>();
-        Map<Integer, Integer> activityIdOrderMap = new HashMap<>();
-
-        for (int i = 0; i < statisticsVOS.size(); i++) {
-            StatisticsVO stat = statisticsVOS.get(i);
-            int activityId = stat.getActivityId();
-            activityIdDurationMap.put(activityId, stat.getTotalDuration());
-            activityIdStatusMap.put(activityId, stat.getStatus());
-            activityIdOrderMap.put(activityId, i); // 排序用下标
-        }
-        // 根据 order map 排序 activitiesList
-        activitiesList.sort(Comparator.comparingInt(a ->
-                activityIdOrderMap.getOrDefault(a.getActivityId(), Integer.MAX_VALUE)
-        ));
-        // 添加到 model
-        model.addAttribute("activitiesList", activitiesList);
-        model.addAttribute("statisticsVOS", activityIdDurationMap);
-        model.addAttribute("activityIdStatusMap", activityIdStatusMap);
-
         return "pages/index";
     }
 
