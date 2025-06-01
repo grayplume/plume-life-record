@@ -167,6 +167,7 @@ public class TimeRecordsServiceImpl extends ServiceImpl<TimeRecordsMapper, TimeR
             Statistics newRecord = new Statistics();
             newRecord.setUserId(userId.intValue());
             newRecord.setActivityId(activityId.intValue());
+            newRecord.setStatus(1);
             newRecord.setTotalDuration(duration);
             statisticsService.save(newRecord);
         } else {
