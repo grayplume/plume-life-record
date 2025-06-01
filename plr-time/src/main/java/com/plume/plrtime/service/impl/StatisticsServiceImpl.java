@@ -248,6 +248,64 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
     }
 
 
+    @Override
+    public List<ActivityDurationVO> selectActivityRanking(String dateStr, Integer categoryId) {
+        // 解析日期
+        LocalDate date = LocalDate.parse(dateStr);
+        LocalDateTime startDateTime = date.atStartOfDay();
+        LocalDateTime endDateTime = startDateTime.plusDays(1);
+
+        // 当前用户
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+        Integer userId = loginUser.getUser().getUserId();
+
+        // 查询当天有交集的记录
+        List<TimeRecords> records = timeRecordsMapper.selectList(
+                new LambdaQueryWrapper<TimeRecords>()
+                        .eq(TimeRecords::getUserId, userId)
+                        .le(TimeRecords::getStartTime, endDateTime)
+                        .ge(TimeRecords::getEndTime, startDateTime)
+        );
+
+        // 活动 Map
+        Map<Integer, Activities> activityMap = activitiesService.list()
+                .stream().collect(Collectors.toMap(Activities::getActivityId, a -> a));
+
+        // 活动ID → 总时长（秒）
+        Map<Integer, Long> activityDurationMap = new HashMap<>();
+
+        for (TimeRecords record : records) {
+            Activities activity = activityMap.get(record.getActivityId());
+            if (activity == null) continue;
+            if (categoryId != null && !categoryId.equals(activity.getCategoryId())) continue;
+
+            // 裁剪时间到当天范围
+            LocalDateTime start = record.getStartTime().isBefore(startDateTime) ? startDateTime : record.getStartTime();
+            LocalDateTime end = record.getEndTime() == null ? endDateTime :
+                    (record.getEndTime().isAfter(endDateTime) ? endDateTime : record.getEndTime());
+
+            if (!start.isBefore(end)) continue; // 无有效时间段
+
+            long seconds = Duration.between(start, end).getSeconds();
+            activityDurationMap.merge(record.getActivityId(), seconds, Long::sum);
+        }
+
+        // 转为 VO 列表
+        List<ActivityDurationVO> result = activityDurationMap.entrySet().stream()
+                .map(entry -> {
+                    ActivityDurationVO vo = new ActivityDurationVO();
+                    vo.setActivityName(activityMap.get(entry.getKey()).getName());
+                    vo.setTotalDurationToday(entry.getValue());
+                    return vo;
+                })
+                .sorted(Comparator.comparingLong(ActivityDurationVO::getTotalDurationToday).reversed())
+                .collect(Collectors.toList());
+
+        return result;
+    }
+
+
 }
 
 

@@ -27,6 +27,8 @@
     </label>
   </div>
 
+  <div id="rankingChart" style="width: 100%; height: 400px; margin-top: 30px;"></div>
+
   <!-- 上面：按日24小时分布 -->
   <div id="dayChart" style="width: 100%; height: 350px; margin-top: 20px;"></div>
 
@@ -38,10 +40,12 @@
 <div layout:fragment="scripts">
   <script th:src="@{/echarts.min.js}"></script>
   <script>
+    const rankingChart = echarts.init(document.getElementById('rankingChart'));
     const dayChart = echarts.init(document.getElementById('dayChart'));
     const monthChart = echarts.init(document.getElementById('monthChart'));
 
     window.addEventListener('resize', () => {
+      rankingChart.resize();
       dayChart.resize();
       monthChart.resize();
     });
@@ -70,6 +74,62 @@
       }).fail((_, __, error) => alert('分类请求错误: ' + error));
     }
 
+    function loadActivityRanking() {
+      const date = $('#dateInput').val();
+      const categoryId = $('#categorySelect').val();
+
+      if (!date) {
+        alert('请选择日期');
+        return;
+      }
+
+      $.get('/statistics/activityRanking', { date, categoryId: categoryId || null })
+              .done(res => {
+                if (res.code === '200' || res.code === 0) {
+                  const data = res.data || [];
+                  console.log(data);
+
+                  const names = data.map(d => d.activityName);
+                  const hours = data.map(d => (d.totalDurationToday / 3600).toFixed(2));
+
+                  console .log(hours);
+
+                  // 设置图表
+                  rankingChart.setOption({
+                    title: { text: `当日时长排行榜（${date}） 单位：小时` },
+                    tooltip: {
+                      trigger: 'axis',
+                      formatter: params => {
+                        return params.map(p => `${p.marker} ${p.name}: ${p.data} 小时`).join('<br/>');
+                      }
+                    },
+                    yAxis: { type: 'category', data: names,inverse : true,},
+                    xAxis: { type: 'value', name: '小时' },
+                    dataZoom: [{
+                      type: 'slider',
+                      yAxisIndex: 0,
+                      start: 0,
+                      end: 100, // 默认显示前80%的活动
+                      orient: 'vertical' // 垂直滚动条
+                    }],
+                    series: [{
+                      name: '总时长',
+                      type: 'bar',
+                      data: hours,
+                      itemStyle: { color: '#5470C6' }
+                    }]
+                  });
+                } else {
+                  alert('加载失败: ' + (res.message || '未知错误'));
+                  rankingChart.clear();
+                }
+              })
+              .fail((_, __, error) => {
+                alert('请求错误: ' + error);
+                rankingChart.clear();
+              });
+    }
+
     // 加载“按日”24小时分布图（单位：小时）
     function loadDayChart(date, categoryId) {
       $.get('/statistics/dayTimeDistribution', { date, categoryId: categoryId || null })
@@ -79,12 +139,19 @@
                   const values = res.data.map(d => (d.durationMinutes / 60).toFixed(1));
 
                   dayChart.setOption({
-                    title: { text: `每日活动时间分布（${date}） 单位：小时` },
+                    title: { text: `每日时间分布（${date}） 单位：小时` },
                     tooltip: {
                       formatter: params => `${params.name}<br/>${params.marker} 活动时长: ${params.data} 小时`
                     },
                     xAxis: { type: 'category', data: hours },
                     yAxis: { type: 'value', name: '时长（小时）' },
+                    dataZoom: [{
+                      type: 'slider',
+                      xAxisIndex: 0,
+                      start: 40,
+                      end: 100, // 默认显示前80%的活动
+                      orient: 'horizontal'
+                    }],
                     series: [{
                       name: '活动时长',
                       type: 'bar',
@@ -120,7 +187,7 @@
                   const values = res.data.map(d => (d.durationMinutes / 60).toFixed(1));
 
                   monthChart.setOption({
-                    title: { text: `月度每日活动时间分布 (${month}) 单位：小时` },
+                    title: { text: `月度时间分布 (${month}) 单位：小时` },
                     tooltip: {
                       trigger: 'axis',
                       formatter: params => {
@@ -131,8 +198,15 @@
                         return content;
                       }
                     },
-                    xAxis: { type: 'category', data: dates, axisLabel: { rotate: 45 } },
+                    xAxis: { type: 'category', data: dates },
                     yAxis: { type: 'value', name: '时长（小时）' },
+                    dataZoom: [{
+                      type: 'slider',
+                      xAxisIndex: 0,
+                      start: 0,
+                      end: 100, // 默认显示前80%的活动
+                      orient: 'horizontal'
+                    }],
                     series: [{
                       name: '活动时长',
                       type: 'bar',
@@ -164,11 +238,13 @@
         return;
       }
 
+      loadActivityRanking(date,categoryId);
       loadDayChart(date, categoryId);
       loadMonthChart(month, categoryId);
     }
 
     $(function () {
+      loadActivityRanking();
       loadCategories();
       loadAllCharts();
 

@@ -1,6 +1,7 @@
 package com.plume.plrtime.controller;
 
 import com.plume.plrtime.common.Result;
+import com.plume.plrtime.pojo.vo.ActivityDurationVO;
 import com.plume.plrtime.pojo.vo.StatisticsVO;
 import com.plume.plrtime.service.StatisticsService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,6 +43,13 @@ public class StatisticsController {
     public Result monthTimeDistribution(String month, Integer categoryId) {
         return Result.success(statisticsService.selectMonthTimeDistribution(month, categoryId));
     }
+
+    @GetMapping("/activityRanking")
+    public Result activityRanking(String date, Integer categoryId) {
+        List<ActivityDurationVO> ranking = statisticsService.selectActivityRanking(date, categoryId);
+        return Result.success(ranking);
+    }
+
 
 
 
