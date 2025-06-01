@@ -196,47 +196,6 @@ public class WebController {
         return "pages/timeRecords";
     }
 
-    @GetMapping("/export-database")
-    public void exportDatabase(HttpServletResponse response) throws IOException {
-        String user = "root";
-        String password = "123456";
-        String dbName = "plr-record";
-
-        String backupFileName = "backup_" + LocalDate.now() + ".sql";
-        File backupFile = new File(System.getProperty("java.io.tmpdir"), backupFileName);
-
-        String command = String.format("mysqldump -u%s -p%s %s -r %s", user, password, dbName, backupFile.getAbsolutePath());
-        Process process = Runtime.getRuntime().exec(command);
-
-        try {
-            if (process.waitFor() == 0 && backupFile.exists()) {
-                // 设置响应头
-                response.setContentType("application/octet-stream");
-                response.setHeader("Content-Disposition", "attachment; filename=" + backupFileName);
-
-                // 流式传输文件内容
-                try (FileInputStream fis = new FileInputStream(backupFile);
-                     ServletOutputStream os = response.getOutputStream()) {
-                    byte[] buffer = new byte[8192];
-                    int bytesRead;
-                    while ((bytesRead = fis.read(buffer)) != -1) {
-                        os.write(buffer, 0, bytesRead);
-                    }
-                    os.flush();
-                }
-            } else {
-                response.sendError(500, "数据库导出失败");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            response.sendError(500, "导出中断");
-        } finally {
-            // 可选：导出完成后删除临时文件
-            backupFile.delete();
-        }
-    }
-
-
 
 
     // 填充一个月内的所有日期

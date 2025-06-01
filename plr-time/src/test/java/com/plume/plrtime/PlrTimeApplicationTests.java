@@ -1,6 +1,7 @@
 package com.plume.plrtime;
 
 import com.plume.plrtime.common.CustomMd5PasswordEncoder;
+import com.plume.plrtime.service.StatisticsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,6 +9,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.Arrays;
 
 @SpringBootTest
@@ -15,6 +17,14 @@ class PlrTimeApplicationTests {
 
     @Autowired
     private CustomMd5PasswordEncoder customMd5PasswordEncoder;
+    @Autowired
+    private StatisticsService statisticsService;
+
+
+    @Test
+     void test1() {
+        System.out.println(statisticsService.getActivityDurationsByDate(LocalDate.now()));
+    }
 
     @Test
     void contextLoads() {

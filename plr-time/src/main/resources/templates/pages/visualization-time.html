@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}" lang="zh">
+<head>
+  <title>活动时间分布</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+  <div>
+    <label>
+      日期:
+      <input type="date" id="dateInput">
+    </label>
+
+    <label>
+      月份:
+      <input type="month" id="monthInput">
+    </label>
+
+    <label>
+      分类:
+      <select id="categorySelect">
+        <option value="">全部分类</option>
+      </select>
+    </label>
+  </div>
+
+  <!-- 上面：按日24小时分布 -->
+  <div id="dayChart" style="width: 100%; height: 350px; margin-top: 20px;"></div>
+
+  <!-- 下面：按月每天分布 -->
+  <div id="monthChart" style="width: 100%; height: 350px; margin-top: 50px;"></div>
+
+</div>
+
+<div layout:fragment="scripts">
+  <script th:src="@{/echarts.min.js}"></script>
+  <script>
+    const dayChart = echarts.init(document.getElementById('dayChart'));
+    const monthChart = echarts.init(document.getElementById('monthChart'));
+
+    window.addEventListener('resize', () => {
+      dayChart.resize();
+      monthChart.resize();
+    });
+
+    // 默认日期和月份
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+
+    $('#dateInput').val(`${yyyy}-${mm}-${dd}`);
+    $('#monthInput').val(`${yyyy}-${mm}`);
+
+    function loadCategories() {
+      $.get('/category/list').done(res => {
+        if (res.code === '200' || res.code === 0) {
+          const categories = res.data;
+          const select = $('#categorySelect');
+          select.empty().append(`<option value="">全部分类</option>`);
+          categories.forEach(cat => {
+            select.append(`<option value="${cat.categoryId}">${cat.categoryName}</option>`);
+          });
+        } else {
+          alert('加载分类失败: ' + (res.message || '未知错误'));
+        }
+      }).fail((_, __, error) => alert('分类请求错误: ' + error));
+    }
+
+    // 加载“按日”24小时分布图（单位：小时）
+    function loadDayChart(date, categoryId) {
+      $.get('/statistics/dayTimeDistribution', { date, categoryId: categoryId || null })
+              .done(res => {
+                if (res.code === '200' || res.code === 0) {
+                  const hours = res.data.map(d => `${d.hour}点`);
+                  const values = res.data.map(d => (d.durationMinutes / 60).toFixed(1));
+
+                  dayChart.setOption({
+                    title: { text: `每日活动时间分布（${date}） 单位：小时` },
+                    tooltip: {
+                      formatter: params => `${params.name}<br/>${params.marker} 活动时长: ${params.data} 小时`
+                    },
+                    xAxis: { type: 'category', data: hours },
+                    yAxis: { type: 'value', name: '时长（小时）' },
+                    series: [{
+                      name: '活动时长',
+                      type: 'bar',
+                      data: values,
+                      itemStyle: { color: '#5470C6' }
+                    }]
+                  });
+                } else {
+                  alert('获取按日数据失败: ' + (res.message || '未知错误'));
+                  dayChart.clear();
+                }
+              }).fail((_, __, error) => {
+        alert('请求错误: ' + error);
+        dayChart.clear();
+      });
+    }
+
+    // 加载“按月”每天分布图（单位：小时）
+    function loadMonthChart(month, categoryId) {
+      $.get('/statistics/monthTimeDistribution', { month, categoryId: categoryId || null })
+              .done(res => {
+                if (res.code === '200' || res.code === 0) {
+                  if (!res.data || res.data.length === 0) {
+                    alert('无按月数据');
+                    monthChart.clear();
+                    return;
+                  }
+
+                  const dates = res.data.map(d => {
+                    const day = d.date.split('-')[2];
+                    return `${day}日`;
+                  });
+                  const values = res.data.map(d => (d.durationMinutes / 60).toFixed(1));
+
+                  monthChart.setOption({
+                    title: { text: `月度每日活动时间分布 (${month}) 单位：小时` },
+                    tooltip: {
+                      trigger: 'axis',
+                      formatter: params => {
+                        let content = params[0].axisValue + '<br/>';
+                        params.forEach(p => {
+                          content += `${p.marker} ${p.seriesName}: ${p.data} 小时<br/>`;
+                        });
+                        return content;
+                      }
+                    },
+                    xAxis: { type: 'category', data: dates, axisLabel: { rotate: 45 } },
+                    yAxis: { type: 'value', name: '时长（小时）' },
+                    series: [{
+                      name: '活动时长',
+                      type: 'bar',
+                      data: values,
+                      itemStyle: { color: '#5470C6' }
+                    }]
+                  });
+                } else {
+                  alert('获取按月数据失败: ' + (res.message || '未知错误'));
+                  monthChart.clear();
+                }
+              }).fail((_, __, error) => {
+        alert('请求错误: ' + error);
+        monthChart.clear();
+      });
+    }
+
+    function loadAllCharts() {
+      const date = $('#dateInput').val();
+      const month = $('#monthInput').val();
+      const categoryId = $('#categorySelect').val();
+
+      if (!date) {
+        alert('请选择日期');
+        return;
+      }
+      if (!month) {
+        alert('请选择月份');
+        return;
+      }
+
+      loadDayChart(date, categoryId);
+      loadMonthChart(month, categoryId);
+    }
+
+    $(function () {
+      loadCategories();
+      loadAllCharts();
+
+      $('#dateInput, #monthInput, #categorySelect').on('change', loadAllCharts);
+    });
+  </script>
+</div>
+
+</body>
+</html>

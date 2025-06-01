@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -32,12 +33,16 @@ public class StatisticsController {
         return Result.success(statisticsVOS);
     }
 
-    /**
-     * 根据用户ID获取统计信息
-     */
-    @GetMapping("/getByUserId")
-    public Result getByUserId(Integer userId) {
-        List<StatisticsVO> statisticsVOS = statisticsService.getByUserId(userId);
-        return Result.success(statisticsVOS);
+    @GetMapping("/dayTimeDistribution")
+     public Result dayTimeDistribution(String date,Integer categoryId) {
+        return Result.success(statisticsService.selectDayTimeDistribution(date,categoryId));
     }
+
+    @GetMapping("/monthTimeDistribution")
+    public Result monthTimeDistribution(String month, Integer categoryId) {
+        return Result.success(statisticsService.selectMonthTimeDistribution(month, categoryId));
+    }
+
+
+
 }
