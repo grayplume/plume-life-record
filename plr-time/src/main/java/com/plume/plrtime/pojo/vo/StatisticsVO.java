@@ -14,6 +14,4 @@ public class StatisticsVO {
     private String activityName;
     private Integer totalDuration;
     private LocalDateTime updatedAt; // 用于排序，不展示也可以隐藏掉
-
-
 }

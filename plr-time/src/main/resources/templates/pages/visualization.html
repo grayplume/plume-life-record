@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}" lang="zh">
+<head>
+  <title>可视化ALL</title>
+</head>
+<body>
+<div layout:fragment="content">
+  <div class="container mt-5">
+    <!--    总时长条形柱状-->
+    <div id="durationChart" style="width: 100%; height: 500px;"></div>
+    <!--    类别饼图-->
+    <div id="categoryPieChart" style="width: 100%; height: 400px;"></div>
+  </div>
+
+</div>>
+
+<div layout:fragment="scripts">
+  <script th:src="@{/echarts.min.js}"></script>
+  <script>
+    $(function () {
+      loadCategoryOptions()
+      $.get('/statistics/show', function (res) {
+        if (res.code !== '200') {
+          alert('数据获取失败');
+          return;
+        }
+
+        const data = res.data;
+
+        // 排序 & 转换 totalDuration 单位为小时（保留1位小数）
+        data.sort((a, b) => b.totalDuration - a.totalDuration);
+        const activityNames = data.map(item => item.activityName);
+        // const durations = data.map(item => (item.totalDuration / 60).toFixed(1)); // 分钟 → 小时
+
+        const chart = echarts.init(document.getElementById('durationChart'));
+
+        const chartColors = [
+          '#5B8FF9', // 柔和蓝
+          '#61DDAA', // 浅绿色
+          '#65789B', // 钢蓝灰
+          '#F6BD16', // 芥末黄
+          '#7262FD', // 紫罗兰
+          '#78D3F8', // 浅天蓝
+          '#9661BC', // 葡萄紫
+          '#F6903D', // 夕阳橙
+          '#008685', // 深青色
+          '#F08BB4'  // 粉红珊瑚
+        ];
+
+
+        //  为数据 添加颜色
+        const durations = data.map((item, index) => ({
+          value: (item.totalDuration / 60).toFixed(1),
+          itemStyle: {
+            color: chartColors[index % chartColors.length]
+          }
+        }));
+
+
+        const option = {
+          title: {
+            text: '各活动总时长（小时）',
+            left: 'center'
+          },
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' }
+          },
+          grid: {
+            left: '10px',
+            right: '30px',
+            bottom: '30px',
+            containLabel: true
+          },
+          xAxis: {
+            type: 'value',
+            name: '小时',
+            axisLabel: {
+              formatter: '{value} h'
+            }
+          },
+          yAxis: {
+            type: 'category',
+            inverse : true,
+            data: activityNames,
+            axisLabel: {
+              interval: 0,
+              formatter: function (value) {
+                return value.length > 10 ? value.slice(0, 10) + '…' : value;
+              }
+            }
+          },
+          dataZoom: [{
+            type: 'slider',
+            yAxisIndex: 0,
+            start: 0,
+            end: 80, // 默认显示前50%的活动
+            orient: 'vertical' // 垂直滚动条
+          }],
+          series: [{
+            name: '总时长',
+            type: 'bar',
+            data: durations,
+            label: {
+              show: true,
+              position: 'right',
+              formatter: '{c} h'
+            },
+            itemStyle: {
+              // color: '#4FA8F9'
+            }
+          }]
+        };
+
+        chart.setOption(option);
+
+        // ---------------------------------------------------------------
+        // 汇总类别总时长，单位转换为小时（保留一位小数）
+        const categoryDurationMap = {};
+        const categoryNameMap = categoryMap;
+        console.log(categoryNameMap);
+
+        data.forEach(item => {
+          const catId = item.categoryId || 0;
+          const durationHours = item.totalDuration / 60; // 分钟转小时
+          if (categoryDurationMap[catId]) {
+            categoryDurationMap[catId] += durationHours;
+          } else {
+            categoryDurationMap[catId] = durationHours;
+          }
+        });
+
+        // 转换成 ECharts 饼图需要的数据格式
+        const pieData = Object.entries(categoryDurationMap).map(([catId, hours]) => ({
+          name: categoryNameMap[catId] || `类别${catId}`,
+          value: +hours.toFixed(1)
+        }));
+
+        const chart2 = echarts.init(document.getElementById('categoryPieChart'));
+        const option2 = {
+          color: chartColors,
+          title: {
+            text: '活动类别时长占比',
+            left: 'center'
+          },
+          tooltip: {
+            trigger: 'item',
+            formatter: '{b}: {c}小时 ({d}%)'
+          },
+          legend: {
+            orient: 'horizontal',
+            left: 'center',
+            bottom: 10,
+            data: pieData.map(item => item.name),
+            overflow: 'scroll',    // 超长时滚动，避免换行
+          },
+          series: [
+            {
+              name: '时长',
+              type: 'pie',
+              // radius: '60%',
+              radius: ['30%', '50%'],
+              // center: ['50%', '45%'],
+              data: pieData,
+              emphasis: {
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+              },
+              label: {
+                formatter: '{b}\n{c}小时\n({d}%)'
+              }
+            }
+          ]
+        };
+
+        chart2.setOption(option2);
+
+
+        // 监听窗口大小变化
+        window.addEventListener('resize', function () {
+          chart.resize(); // 保证图表跟随窗口变化
+          chart2.resize();
+        });
+      });
+
+    });
+    let categoryMap = {};
+    function loadCategoryOptions() {
+      $.get('/category/list', function(res) {
+        if (res.code === '200') {
+          const select = $('#activityType');
+          select.empty();
+          res.data.forEach(c => {
+            select.append(`<option value="${c.categoryId}">${c.categoryName}</option>`);
+            // 构建 ID → 名称 映射
+            categoryMap[c.categoryId] = c.categoryName;
+          });
+        }
+      });
+    }
+
+  </script>
+</div>
+
+
+</body>
+</html>
