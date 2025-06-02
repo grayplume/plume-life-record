@@ -26,4 +26,6 @@ public interface StatisticsService extends IService<Statistics> {
     List<DateDurationVO> selectMonthTimeDistribution(String month, Integer categoryId);
 
     List<ActivityDurationVO> selectActivityRanking(String date, Integer categoryId);
+
+    List<ActivityDurationVO> selectMonthlyActivityRanking(String month, Integer categoryId);
 }

@@ -27,14 +27,22 @@
     </label>
   </div>
 
+  <!-- 每日活动排行榜 -->
   <div id="rankingChart" style="width: 100%; height: 400px; margin-top: 30px;"></div>
 
-  <div id="rankingPieChart" style="width: 100%; height: 400px;"></div>
+  <!-- 饼图容器，设置为 flex 横向排列 -->
+  <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-top: 30px;">
+    <!-- 每日活动饼图 -->
+    <div id="rankingPieChart" style="flex: 1; min-width: 300px; height: 400px;"></div>
+    <!-- 每月活动饼图 -->
+    <div id="rankingMonthPieChart" style="flex: 1; min-width: 300px; height: 400px;"></div>
+  </div>
 
-  <!-- 上面：按日24小时分布 -->
+  <!-- 每日时间分布 -->
   <div id="dayChart" style="width: 100%; height: 350px; margin-top: 20px;"></div>
-
-  <!-- 下面：按月每天分布 -->
+  <!-- 每月活动排行榜 -->
+  <div id="rankingMonthChart" style="width: 100%; height: 400px; margin-top: 30px;"></div>
+  <!-- 每月时间分布 -->
   <div id="monthChart" style="width: 100%; height: 350px; margin-top: 50px;"></div>
 
 </div>
@@ -44,13 +52,17 @@
   <script>
     const rankingChart = echarts.init(document.getElementById('rankingChart'));
     const chart2 = echarts.init(document.getElementById('rankingPieChart'));
+    const rankingMonthPieChart  = echarts.init(document.getElementById('rankingMonthPieChart'));
     const dayChart = echarts.init(document.getElementById('dayChart'));
+    const rankingMonthChart = echarts.init(document.getElementById('rankingMonthChart'));
     const monthChart = echarts.init(document.getElementById('monthChart'));
 
     window.addEventListener('resize', () => {
       rankingChart.resize();
       chart2.resize();
+      rankingMonthPieChart.resize();
       dayChart.resize();
+      rankingMonthChart.resize();
       monthChart.resize();
     });
 
@@ -142,7 +154,7 @@
 
                   const option2 = {
                     title: {
-                      text: '各活动占比',
+                      text: '当日活动占比',
                       left: 'center'
                     },
                     tooltip: {
@@ -227,6 +239,116 @@
       });
     }
 
+    function loadMonthActivityRanking() {
+      const month = $('#monthInput').val();
+      const categoryId = $('#categorySelect').val();
+
+      if (!month) {
+        alert('请选择月份');
+        return;
+      }
+
+      $.get('/statistics/activityRankingByMonth', { month, categoryId: categoryId || null })
+              .done(res => {
+                if (res.code === '200' || res.code === 0) {
+                  const data = res.data || [];
+                  console.log(data);
+
+                  const names = data.map(d => d.activityName);
+                  const minutes = data.map(d => (d.totalDurationToday / 3600).toFixed(1));
+
+                  // 设置图表
+                  rankingMonthChart.setOption({
+                    title: { text: `当月时长排行榜（${month}） 单位：小时` },
+                    tooltip: {
+                      trigger: 'axis',
+                      formatter: params => {
+                        return params.map(p => `${p.marker} ${p.name}: ${p.data} 小时`).join('<br/>');
+                      }
+                    },
+                    grid: {
+                      left: '10px',
+                      right: '80px',
+                      bottom: '30px',
+                      containLabel: true
+                    },
+                    yAxis: { type: 'category', data: names,inverse : true,},
+                    xAxis: { type: 'value', name: '小时' },
+                    dataZoom: [{
+                      type: 'slider',
+                      yAxisIndex: 0,
+                      start: 0,
+                      end: 100, // 默认显示前80%的活动
+                      orient: 'vertical' // 垂直滚动条
+                    }],
+                    series: [{
+                      name: '总时长',
+                      type: 'bar',
+                      data: minutes,
+                      label: {
+                        show: true,
+                        position: 'right',
+                        formatter: '{c} h'
+                      },
+                      itemStyle: { color: '#5470C6' }
+                    }]
+                  });
+
+                  // 饼图 ============================================
+                  // 计算原始数据（用于饼图）
+                  const pieData = data.map(d => ({
+                    name: d.activityName,
+                    value: (d.totalDurationToday / 3600).toFixed(1)  // 转换为分钟并保留一位小数
+                  }));
+
+                  const rankingMonthPieChartOption = {
+                    title: {
+                      text: '当月活动占比',
+                      left: 'center'
+                    },
+                    tooltip: {
+                      trigger: 'item',
+                      formatter: '{b}: {c} 小时 ({d}%)',
+                    },
+                    legend: {
+                      orient: 'horizontal',
+                      left: 'center',
+                      bottom: 10,
+                      data: pieData.map(item => item.name),
+                      overflow: 'scroll',    // 超长时滚动，避免换行
+                    },
+                    series: [{
+                      name: '当日时长分布',
+                      type: 'pie',
+                      radius: ['30%', '50%'],
+                      data: pieData,
+                      emphasis: {
+                        itemStyle: {
+                          shadowBlur: 10,
+                          shadowOffsetX: 0,
+                          shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                      },
+                      // label: {
+                      //   formatter: '{b}\n{c}小时',
+                      //   position: 'outside',
+                      // }
+                    }]
+                  };
+
+                  rankingMonthPieChart.setOption(rankingMonthPieChartOption);
+
+                } else {
+                  alert('加载失败: ' + (res.message || '未知错误'));
+                  rankingMonthChart.clear();
+                }
+              })
+              .fail((_, __, error) => {
+                alert('请求错误: ' + error);
+                rankingMonthChart.clear();
+              });
+    }
+
     // 加载“按月”每天分布图（单位：小时）
     function loadMonthChart(month, categoryId) {
       $.get('/statistics/monthTimeDistribution', { month, categoryId: categoryId || null })
@@ -295,14 +417,15 @@
         alert('请选择月份');
         return;
       }
-
-      loadActivityRanking(date,categoryId);
+      console.info( '加载数据:', date, month, categoryId)
+      loadActivityRanking();
       loadDayChart(date, categoryId);
       loadMonthChart(month, categoryId);
+      loadMonthActivityRanking(month,categoryId)
     }
 
     $(function () {
-      loadActivityRanking();
+      // loadActivityRanking();
       loadCategories();
       loadAllCharts();
 

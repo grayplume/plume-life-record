@@ -50,6 +50,11 @@ public class StatisticsController {
         return Result.success(ranking);
     }
 
+    @GetMapping("/activityRankingByMonth")
+    public Result activityRankingByMonth(String month, Integer categoryId) {
+        List<ActivityDurationVO> ranking = statisticsService.selectMonthlyActivityRanking(month, categoryId);
+        return Result.success(ranking);
+    }
 
 
 

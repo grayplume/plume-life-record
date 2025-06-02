@@ -305,6 +305,62 @@ public class StatisticsServiceImpl extends ServiceImpl<StatisticsMapper, Statist
         return result;
     }
 
+    @Override
+    public List<ActivityDurationVO> selectMonthlyActivityRanking(String month, Integer categoryId) {
+
+        YearMonth yearMonth = YearMonth.parse(month);
+        LocalDate firstDay = yearMonth.atDay(1);
+        LocalDate lastDay = yearMonth.atEndOfMonth();
+
+        LocalDateTime startDateTime = firstDay.atStartOfDay();
+        LocalDateTime endDateTime = lastDay.plusDays(1).atStartOfDay(); // 包含最后一天
+
+        // 当前用户
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+        Integer userId = loginUser.getUser().getUserId();
+
+        // 查询该月范围内的记录
+        List<TimeRecords> records = timeRecordsMapper.selectList(
+                new LambdaQueryWrapper<TimeRecords>()
+                        .eq(TimeRecords::getUserId, userId)
+                        .le(TimeRecords::getStartTime, endDateTime)
+                        .ge(TimeRecords::getEndTime, startDateTime)
+        );
+
+        // 活动信息 Map
+        Map<Integer, Activities> activityMap = activitiesService.list()
+                .stream().collect(Collectors.toMap(Activities::getActivityId, a -> a));
+
+        Map<Integer, Long> activityDurationMap = new HashMap<>();
+
+        for (TimeRecords record : records) {
+            Activities activity = activityMap.get(record.getActivityId());
+            if (activity == null) continue;
+            if (categoryId != null && !categoryId.equals(activity.getCategoryId())) continue;
+
+            // 裁剪时间到月范围内
+            LocalDateTime start = record.getStartTime().isBefore(startDateTime) ? startDateTime : record.getStartTime();
+            LocalDateTime end = record.getEndTime() == null ? endDateTime :
+                    (record.getEndTime().isAfter(endDateTime) ? endDateTime : record.getEndTime());
+
+            if (!start.isBefore(end)) continue;
+
+            long seconds = Duration.between(start, end).getSeconds();
+            activityDurationMap.merge(record.getActivityId(), seconds, Long::sum);
+        }
+
+        return activityDurationMap.entrySet().stream()
+                .map(entry -> {
+                    ActivityDurationVO vo = new ActivityDurationVO();
+                    vo.setActivityName(activityMap.get(entry.getKey()).getName());
+                    vo.setTotalDurationToday(entry.getValue());
+                    return vo;
+                })
+                .sorted(Comparator.comparingLong(ActivityDurationVO::getTotalDurationToday).reversed())
+                .collect(Collectors.toList());
+    }
+
 
 }
 
