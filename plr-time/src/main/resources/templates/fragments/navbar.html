@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="ch">
 <body>
 <!-- 导航栏片段 -->
-<nav th:fragment="navbar" class="navbar bg-dark navbar-expand-lg" data-bs-theme="dark">
+<nav th:fragment="navbar" class="navbar fixed-top bg-dark navbar-expand-md" data-bs-theme="dark">
     <div class="container">
         <a class="navbar-brand" th:href="@{/web/home}">
             <i class="fas fa-rocket me-2"></i>我的系统
@@ -32,7 +32,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/web/test}">
-                        可视化
+                        可视化-old
                     </a>
                 </li>
                 <li class="nav-item">
