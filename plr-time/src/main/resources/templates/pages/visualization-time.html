@@ -29,6 +29,8 @@
 
   <div id="rankingChart" style="width: 100%; height: 400px; margin-top: 30px;"></div>
 
+  <div id="rankingPieChart" style="width: 100%; height: 400px;"></div>
+
   <!-- 上面：按日24小时分布 -->
   <div id="dayChart" style="width: 100%; height: 350px; margin-top: 20px;"></div>
 
@@ -41,11 +43,13 @@
   <script th:src="@{/echarts.min.js}"></script>
   <script>
     const rankingChart = echarts.init(document.getElementById('rankingChart'));
+    const chart2 = echarts.init(document.getElementById('rankingPieChart'));
     const dayChart = echarts.init(document.getElementById('dayChart'));
     const monthChart = echarts.init(document.getElementById('monthChart'));
 
     window.addEventListener('resize', () => {
       rankingChart.resize();
+      chart2.resize();
       dayChart.resize();
       monthChart.resize();
     });
@@ -90,21 +94,25 @@
                   console.log(data);
 
                   const names = data.map(d => d.activityName);
-                  const hours = data.map(d => (d.totalDurationToday / 3600).toFixed(2));
-
-                  console .log(hours);
+                  const minutes = data.map(d => (d.totalDurationToday / 60).toFixed(0));
 
                   // 设置图表
                   rankingChart.setOption({
-                    title: { text: `当日时长排行榜（${date}） 单位：小时` },
+                    title: { text: `当日时长排行榜（${date}） 单位：分钟` },
                     tooltip: {
                       trigger: 'axis',
                       formatter: params => {
-                        return params.map(p => `${p.marker} ${p.name}: ${p.data} 小时`).join('<br/>');
+                        return params.map(p => `${p.marker} ${p.name}: ${p.data} 分钟`).join('<br/>');
                       }
                     },
+                    grid: {
+                      left: '10px',
+                      right: '80px',
+                      bottom: '30px',
+                      containLabel: true
+                    },
                     yAxis: { type: 'category', data: names,inverse : true,},
-                    xAxis: { type: 'value', name: '小时' },
+                    xAxis: { type: 'value', name: '分钟' },
                     dataZoom: [{
                       type: 'slider',
                       yAxisIndex: 0,
@@ -115,10 +123,60 @@
                     series: [{
                       name: '总时长',
                       type: 'bar',
-                      data: hours,
+                      data: minutes,
+                      label: {
+                        show: true,
+                        position: 'right',
+                        formatter: '{c} min'
+                      },
                       itemStyle: { color: '#5470C6' }
                     }]
                   });
+
+                  // 饼图 ============================================
+                  // 计算原始数据（用于饼图）
+                  const pieData = data.map(d => ({
+                    name: d.activityName,
+                    value: (d.totalDurationToday / 60).toFixed(1)  // 转换为分钟并保留一位小数
+                  }));
+
+                  const option2 = {
+                    title: {
+                      text: '各活动占比',
+                      left: 'center'
+                    },
+                    tooltip: {
+                      trigger: 'item',
+                      formatter: '{b}: {c} 分钟 ({d}%)',
+                    },
+                    legend: {
+                      orient: 'horizontal',
+                      left: 'center',
+                      bottom: 10,
+                      data: pieData.map(item => item.name),
+                      overflow: 'scroll',    // 超长时滚动，避免换行
+                    },
+                    series: [{
+                      name: '当日时长分布',
+                      type: 'pie',
+                      radius: ['30%', '50%'],
+                      data: pieData,
+                      emphasis: {
+                        itemStyle: {
+                          shadowBlur: 10,
+                          shadowOffsetX: 0,
+                          shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                      },
+                      label: {
+                        formatter: '{b}\n{c}分钟\n({d}%)',
+                        position: 'outside',
+                      }
+                    }]
+                  };
+
+                  chart2.setOption(option2);
+
                 } else {
                   alert('加载失败: ' + (res.message || '未知错误'));
                   rankingChart.clear();

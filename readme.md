@@ -1,4 +1,13 @@
 
+
+### 统计
+> 每日每周每月需要那些数据?
+
+活动分别总时长;按照类别分类总时长;时间段;按月查询每天总时长;
+
+### todolist
+id，user_id,parent_id,title,type,status,schedule(进度,可用子任务的title),updatetime,createtime
+
 ### sql文件
 
 ```sql
