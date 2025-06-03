@@ -6,7 +6,25 @@
 活动分别总时长;按照类别分类总时长;时间段;按月查询每天总时长;
 
 ### todolist
+todo_list
 id，user_id,parent_id,title,type,status,schedule(进度,可用子任务的title),updatetime,createtime
+
+```sql
+create table todo_list
+(
+    todo_id       int auto_increment comment '任务ID'
+        primary key,
+    user_id       int                                   not null comment '用户ID',
+    parent_id     int         default 0                 not null comment '父任务',
+    todo_name     varchar(50)                           not null comment '任务名称',
+    todo_type     varchar(20)                           not null comment '任务类型',
+    todo_status   varchar(20)                           not null comment '任务状态',
+    todo_schedule varchar(20) default '无进度'          not null comment '任务当前进度',
+    updated_time  timestamp   default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    created_time  timestamp   default CURRENT_TIMESTAMP not null comment '创建时间'
+)
+    comment '任务表';
+```
 
 ### sql文件
 

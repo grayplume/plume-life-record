@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.plume.plrtime.mapper.TodoListMapper">
+
+    <resultMap id="BaseResultMap" type="com.plume.plrtime.pojo.TodoList">
+            <id property="todoId" column="todo_id" />
+            <result property="userId" column="user_id" />
+            <result property="parentId" column="parent_id" />
+            <result property="todoName" column="todo_name" />
+            <result property="todoType" column="todo_type" />
+            <result property="todoStatus" column="todo_status" />
+            <result property="todoSchedule" column="todo_schedule" />
+            <result property="updatedTime" column="updated_time" />
+            <result property="createdTime" column="created_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        todo_id,user_id,parent_id,todo_name,todo_type,todo_status,
+        todo_schedule,updated_time,created_time
+    </sql>
+</mapper>

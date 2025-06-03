@@ -196,6 +196,13 @@ public class WebController {
         return "pages/timeRecords";
     }
 
+    // 时间记录管理页面
+    @GetMapping("/todoList")
+    public String todoList(Model model) {
+        return "pages/todoList";
+    }
+
+
 
 
     // 填充一个月内的所有日期
