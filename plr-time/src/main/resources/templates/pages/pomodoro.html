@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}" lang="zh">
+<head>
+  <title>模板</title>
+</head>
+<body>
+<div layout:fragment="content">
+  <div class="container mt-5">
+    <h2 class="text-center mb-4">专注时间钟</h2>
+    <div class="text-center">
+      <h1 id="timer" class="display-4">90:00</h1>
+      <div class="btn-group mt-3">
+        <button id="startBtn" class="btn btn-success">开始</button>
+        <button id="pauseBtn" class="btn btn-warning">暂停</button>
+        <button id="resetBtn" class="btn btn-danger">重置</button>
+      </div>
+      <p class="mt-3" id="statusText">状态：等待开始</p>
+    </div>
+  </div>
+  <audio id="alertSound" src="/audio/rotary-phone-dial-being-rotated-1.mp3"></audio> <!-- 提示音，可替换路径 -->
+
+</div>
+
+<div layout:fragment="scripts">
+  <script>
+    const focusDuration = 90 * 60;
+    const breakDuration = 20 * 60;
+
+    let remainingTime = focusDuration;
+    let timer = null;
+    let beepTimeout = null;
+    let isRunning = false;
+    let isBreak = false;
+
+    const timerDisplay = document.getElementById('timer');
+    const statusText = document.getElementById('statusText');
+    const alertSound = document.getElementById('alertSound');
+
+    const STORAGE_KEY = "timer-state";
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      try {
+        alertSound.play().then(() => alertSound.pause()); // 预热音频
+      } catch (e) {
+        console.warn("提示音预热失败", e);
+      }
+      startTimer();
+    });
+    document.getElementById('pauseBtn').addEventListener('click', pauseTimer);
+    document.getElementById('resetBtn').addEventListener('click', resetTimer);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initFromStorage();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) initFromStorage();
+    });
+
+    function initFromStorage() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const state = JSON.parse(saved);
+        const elapsed = Math.floor((Date.now() - state.lastStart) / 1000);
+        remainingTime = Math.max((state.remaining - (state.running ? elapsed : 0)), 0);
+        isBreak = state.break;
+
+        updateDisplay();
+        updateTitle();
+
+        if (state.running && remainingTime > 0) {
+          isRunning = false;
+          startTimer();
+        } else {
+          isRunning = false;
+          statusText.textContent = isBreak ? '状态：休息中（已暂停）' : '状态：专注中（已暂停）';
+        }
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        remaining: remainingTime,
+        running: isRunning,
+        break: isBreak,
+        lastStart: Date.now()
+      }));
+    }
+
+    function startTimer() {
+      if (isRunning) return;
+      isRunning = true;
+      statusText.textContent = isBreak ? '状态：休息中' : '状态：专注中';
+      saveState();
+      clearInterval(timer);
+      clearTimeout(beepTimeout);
+
+      timer = setInterval(() => {
+        if (remainingTime > 0) {
+          remainingTime--;
+          updateDisplay();
+          updateTitle();
+          saveState();
+        } else {
+          clearInterval(timer);
+          clearTimeout(beepTimeout);
+          isRunning = false;
+          if (!isBreak) {
+            isBreak = true;
+            remainingTime = breakDuration;
+            alert("✅ 90分钟到！请休息20分钟");
+            startTimer();
+          } else {
+            alert("⏰ 休息结束！可以重新开始了");
+            resetTimer();
+          }
+          saveState();
+        }
+      }, 1000);
+
+      scheduleOneRandomBeep();
+    }
+
+    function pauseTimer() {
+      isRunning = false;
+      clearInterval(timer);
+      clearTimeout(beepTimeout);
+      statusText.textContent = isBreak ? '状态：休息中（已暂停）' : '状态：专注中（已暂停）';
+      saveState();
+    }
+
+    function resetTimer() {
+      isRunning = false;
+      isBreak = false;
+      clearInterval(timer);
+      clearTimeout(beepTimeout);
+      remainingTime = focusDuration;
+      localStorage.removeItem(STORAGE_KEY);
+      updateDisplay();
+      updateTitle();
+      statusText.textContent = '状态：等待开始';
+    }
+
+    function updateDisplay() {
+      const minutes = String(Math.floor(remainingTime / 60)).padStart(2, '0');
+      const seconds = String(remainingTime % 60).padStart(2, '0');
+      timerDisplay.textContent = `${minutes}:${seconds}`;
+    }
+
+    function updateTitle() {
+      const minutes = Math.floor(remainingTime / 60);
+      const seconds = remainingTime % 60;
+      document.title = `${isBreak ? '休息中' : '专注中'} - ${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function scheduleOneRandomBeep() {
+      if (!isRunning || isBreak) return;
+      const randomDelay = Math.floor(Math.random() * (5 * 60 * 1000)); // 0~5分钟内
+      beepTimeout = setTimeout(() => {
+        if (isRunning && !isBreak) {
+          alertSound.play().catch(err => console.log("提示音播放失败：", err));
+          const now = new Date();
+          const formatted = now.getFullYear() + '-' +
+                  String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                  String(now.getDate()).padStart(2, '0') + ' ' +
+                  String(now.getHours()).padStart(2, '0') + ':' +
+                  String(now.getMinutes()).padStart(2, '0') + ':' +
+                  String(now.getSeconds()).padStart(2, '0');
+
+          console.log("🔔 随机提示音响起于：" + formatted);
+          // console.log("🔔 随机提示音响起");
+          // 注意：这次只响一次，不再递归调用
+        }
+      }, randomDelay);
+    }
+  </script>
+
+</div>
+
+</body>
+</html>

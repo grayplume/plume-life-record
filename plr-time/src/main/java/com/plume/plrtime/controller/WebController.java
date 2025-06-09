@@ -131,6 +131,12 @@ public class WebController {
         return String.format("%02dh %02dm", hours, mins);
     }
 
+    // 测试番茄钟
+    @GetMapping("/pomodoro")
+    public String pomodoro() {
+        return "pages/pomodoro";
+    }
+
     @GetMapping("/login")
     public String login() {
         return "login";

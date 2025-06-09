@@ -5,236 +5,187 @@
 <head>
     <title>Activities Management</title>
     <style>
-        /* 基础黑白风格 */
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: #fafafa;
-            color: #333;
-            line-height: 1.6;
-        }
+         body {
+             background-color: #f1f3f5;
+         }
 
         h2 {
-            color: #222;
-            margin-bottom: 24px;
-            font-weight: 500;
             text-align: center;
-            letter-spacing: 0.5px;
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 24px;
-            background: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .table th {
-            background-color: #f5f5f5;
+            margin: 40px 0 30px;
+            font-weight: 600;
             color: #333;
+        }
+
+        .activity-card {
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-width: 2px;
+            border-radius: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            padding: 12px;
+            box-shadow: 0 0 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .activity-card:hover {
+            transform: scale(1.015);
+            box-shadow: 0 0 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-ongoing {
+            border-color: #28a745 !important;
+            box-shadow: 0 0 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .status-ended {
+            border-color: #6c757d !important;
+            background-color: #f8f9fa;
+        }
+
+        .status-unknown {
+            border-color: #343a40 !important;
+            background-color: #e9ecef;
+            filter: grayscale(40%);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            font-size: 0.85rem;
             font-weight: 500;
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 10px;
         }
 
-        .table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #e0e0e0;
-            vertical-align: middle;
-        }
-
-        .table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .table tr:hover {
-            background-color: #f9f9f9;
-        }
-
-        /* 状态标签 */
-        .status {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-        }
-
-        .status-1 {
-            background-color: #f0f0f0;
-            color: #83cf3f;
-            border: 1px solid #ddd;
-        }
-
-        .status-2 {
-            background-color: #e0e0e0;
-            color: #555;
-        }
-
-        .status-3 {
-            background-color: #333;
-            color: white;
-        }
-
-        /* 按钮样式 */
-        .action-button {
-            background: none;
-            border: 1px solid #ddd;
-            color: #333;
-            padding: 6px 12px;
-            font-size: 13px;
+        .status-indicator {
+            width: 8px;
+            height: 20px;
             border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-right: 5px;
-            outline: none;
+            margin-right: 8px;
         }
 
-        .action-button:hover {
-            background-color: #f5f5f5;
-            border-color: #ccc;
+        .status-ongoing-bar .status-indicator {
+            background-color: #28a745;
         }
 
-        .action-button:active {
-            background-color: #ebebeb;
+        .status-ended-bar .status-indicator {
+            background-color: #6c757d;
         }
 
-        /* 特殊按钮样式 */
-        .start-button {
-            border-color: #999;
+        .status-unknown-bar .status-indicator {
+            background-color: #343a40;
         }
 
-        .end-button {
-            border-color: #666;
-        }
-
-        /* 容器样式 */
-        .content-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* 响应式调整 */
-        @media (max-width: 768px) {
-            .table {
-                display: block;
-                overflow-x: auto;
-            }
+        .btn {
+            padding: 6px 14px;
+            font-size: 0.9rem;
         }
     </style>
 </head>
+
 <body>
 <div layout:fragment="content">
-    <div class="content-container">
-        <h2>活动时间管理</h2>
-
-        <table class="table" id="dataTable">
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>AName</th>
-                <th>Category</th>
-                <th>Time</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            <!--     动态添加       -->
-            </tbody>
-        </table>
+    <div class="container">
+        <!-- <h2>活动时间管理</h2> -->
+        <div class="row" id="activitiesContainer">
+            <!-- 卡片内容将被动态插入 -->
+        </div>
     </div>
 </div>
+
 <div layout:fragment="scripts">
     <script>
-
         function loadActivityList() {
-            console.log("loadActivityList")
             $.get('/statistics/show', function (res) {
-                console.log(res);
                 if (res.code === '200') {
                     const list = res.data;
-                    const tbody = $('#dataTable tbody');
-                    tbody.empty();
+                    const container = $('#activitiesContainer');
+                    container.empty();
 
                     list.forEach(activity => {
-                        tbody.append(`
-                        <tr>
-                            <td>${activity.activityId}</td>
-                            <td>${activity.activityName}</td>
-                            <td>${activity.categoryId}</td>
+                        const status = activity.status;
 
-                            <td>${Math.floor(activity.totalDuration/60)+'h '+activity.totalDuration%60+'m'}</td>
+                        // 状态样式类 + 文本
+                        let statusClass = '';
+                        let statusText = '';
+                        let btnClass = '';
+                        let btnText = '';
 
-                            <td>
-                                <span class="${activity.status === 1 ? 'status status-1' :
-                                    activity.status === 0 ? 'status status-2' : 'status status-3'}">
-                                    ${activity.status === 1 ? '进行中' :
-                                    activity.status === 0 ? '已结束' : '未知'}
-                                </span>
+                        if (status === 1) {
+                            statusClass = 'status-ongoing';
+                            statusText = '进行中';
+                            btnClass = 'btn-outline-success'; // 更柔和的绿色
+                            btnText = '结束';
+                        } else if (status === 0) {
+                            statusClass = 'status-ended';
+                            statusText = '已结束';
+                            btnClass = 'btn-outline-secondary'; // 中性色
+                            btnText = '开始';
+                        } else {
+                            statusClass = 'stat us-unknown';
+                            statusText = '未知';
+                            btnClass = 'btn-outline-dark'; // 灰黑色
+                            btnText = '开始';
+                        }
 
-                            </td>
-                            <td>
-                                <button class="action-button start-button"
-                                        onclick="startTimer(${activity.activityId})">开始</button>
-                                <button class="action-button end-button"
-                                        onclick="endTimer(${activity.activityId})">结束</button>
-                            </td>
-                        </tr>
-                    `);
+
+                        const html = `
+                            <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+                                <div class="card activity-card border ${statusClass}">
+                                    <div class="card-body d-flex flex-column">
+                                        <div class="status-bar ${statusClass}-bar">
+                                            <div class="status-indicator"></div>
+                                            <span>${statusText}</span>
+                                        </div>
+                                        <h5 class="card-title">${activity.activityName}</h5>
+                                        <p class="card-text mb-1">时长：${Math.floor(activity.totalDuration / 60)}h ${activity.totalDuration % 60}m</p>
+                                        <button class="btn ${btnClass} mt-auto "
+                                                onclick="toggleTimer(event, ${activity.activityId}, ${activity.status})">
+                                            ${btnText}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.append(html);
                     });
                 }
             });
         }
 
-        function startTimer(activityId) {
+        function toggleTimer(event, activityId, status) {
             const button = event.target;
             button.disabled = true;
             button.textContent = '处理中...';
 
+            const url = status === 1 ? '/timeRecord/end' : '/timeRecord/start';
+
             $.ajax({
-                url: '/timeRecord/start',
+                url: url,
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({ activityId: activityId}),
-                success: function(response) {
-                    showToast('计时已开始', "success");
-                    loadActivityList()
+                data: JSON.stringify({ activityId }),
+                success: function () {
+                    showToasts(status === 1 ? '计时已结束' : '计时已开始', 'success');
+                    loadActivityList();
                 },
-                error: function(error) {
-                    showToast('开始计时时出错', "error");
+                error: function () {
+                    showToasts('操作失败，请重试', 'error');
                     button.disabled = false;
-                    button.textContent = '开始';
-                },
-                complete: function() {
-                    // 无论成功失败都执行的操作
+                    button.textContent = status === 1 ? '结束' : '开始';
                 }
             });
         }
 
-        function endTimer(activityId) {
-            const button = event.target;
-            button.disabled = true;
-            button.textContent = '处理中...';
-
-            $.ajax({
-                url: '/timeRecord/end',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ activityId: activityId}),
-                success: function(response) {
-                    showToast('计时已结束', "success");
-                    loadActivityList()
-                },
-                error: function(error) {
-                    showToast('结束计时时出错', "error");
-                    button.disabled = false;
-                    button.textContent = '结束';
-                }
-            });
+        function showToasts(msg, type) {
+            // alert(msg); // 你可以替换成更美观的提示组件
+            showToast(msg, type)
         }
         $(function () {
             loadActivityList();

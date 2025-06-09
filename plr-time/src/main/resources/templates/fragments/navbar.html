@@ -1,64 +1,99 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="ch">
+<html xmlns:th="http://www.thymeleaf.org" lang="zh">
+<head>
+    <!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"> -->
+    <style>
+        .navbar {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-nav .nav-link {
+            position: relative;
+            padding: 8px 14px;
+            transition: color 0.3s;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: #ffc107 !important;
+        }
+
+        .navbar-nav .nav-link.active {
+            color: #ffc107 !important;
+            font-weight: 600;
+        }
+
+        /* 小图标美化（可选） */
+        .nav-link i {
+            margin-right: 5px;
+        }
+
+        /* 修复导航条与页面内容重叠 */
+        body {
+            padding-top: 70px;
+        }
+    </style>
+</head>
 <body>
 <!-- 导航栏片段 -->
 <nav th:fragment="navbar" class="navbar fixed-top bg-dark navbar-expand-md" data-bs-theme="dark">
     <div class="container">
         <a class="navbar-brand" th:href="@{/web/home}">
-            <i class="fas fa-rocket me-2"></i>我的系统
+            我的系统
         </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                data-bs-target="#navbarContent">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
             <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navbarContent">
-            <ul class="navbar-nav me-auto">
+            <ul class="navbar-nav me-auto mb-2 mb-md-0">
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/web/index}">
-                        首页
+                        <i class="fas fa-home"></i> 首页
                     </a>
                 </li>
+
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/web/activity}">
-                        活动
+                        <i class="fas fa-running"></i> 活动
                     </a>
                 </li>
+
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/web/category}">
-                        分类
+                        <i class="fas fa-layer-group"></i> 分类
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/web/test}">
-                        可视化-old
+
+                <!-- 可视化菜单分组 -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-chart-pie"></i> 可视化
                     </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" th:href="@{/web/test}">可视化-old</a></li>
+                        <li><a class="dropdown-item" th:href="@{/web/visualization}">可视化-all</a></li>
+                        <li><a class="dropdown-item" th:href="@{/web/visualizationTime}">可视化-time</a></li>
+                    </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/web/visualization}">
-                        可视化-all
+
+                <!-- 数据与工具菜单分组 -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-database"></i> 数据
                     </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/web/visualizationTime}">
-                        可视化-time
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/web/timeRecords}">
-                        记录数据
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/web/todoList}">
-                        TODO
-                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" th:href="@{/web/timeRecords}">记录数据</a></li>
+                        <li><a class="dropdown-item" th:href="@{/web/todoList}">TODO</a></li>
+                        <li><a class="dropdown-item" th:href="@{/web/pomodoro}">Pomodoro</a></li>
+                    </ul>
                 </li>
             </ul>
         </div>
     </div>
-
 </nav>
+
+
+<!-- 你自己的内容片段在这里 -->
 </body>
 </html>
