@@ -1,5 +1,30 @@
 
 
+
+
+### 设备模块
+```sql
+create table devices
+(
+    device_id      int auto_increment comment '设备ID'
+        primary key,
+    user_id        int                                   not null comment '用户ID',
+    name           varchar(100)                          not null comment '设备名称',
+    type           varchar(50)                           not null comment '设备类型',
+    status         varchar(20) default '在用'            not null comment '使用状态（在用/闲置/已报废）',
+    purchase_price decimal(10, 2)                        not null comment '购买价格',
+    purchase_date  date                                  not null comment '购买日期',
+    notes          text                                  null comment '备注',
+    created_at     timestamp   default CURRENT_TIMESTAMP null comment '创建时间',
+    updated_at     timestamp   default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间'
+);
+
+alter table devices
+    add constraint devices_pk
+        unique (name);
+
+```
+
 ### 统计
 > 每日每周每月需要那些数据?
 

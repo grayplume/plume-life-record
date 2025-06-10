@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}" lang="zh">
+<head>
+  <title>设备</title>
+</head>
+<body>
+<div layout:fragment="content">
+  <div class="container mt-4">
+
+    <div class="mb-3">
+      <button class="btn btn-primary" id="btnAdd">新增设备</button>
+      <button class="btn btn-danger" id="btnDeleteSelected">删除选中</button>
+    </div>
+
+    <div class="row my-3">
+      <div class="col-md-3">
+        <div class="alert alert-primary" role="alert" id="totalAsset">
+          总资产：¥0.00
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="alert alert-success" role="alert" id="avgDailyCost">
+          总体日均成本：¥0.00
+        </div>
+      </div>
+    </div>
+
+    <!-- 卡片列表容器 -->
+    <div id="deviceCardList" class="row g-3">
+      <!-- 这里通过JS渲染设备卡片 -->
+    </div>
+
+  </div>
+
+  <!-- 设备编辑模态框（保持不变） -->
+  <div class="modal fade" id="deviceModal" tabindex="-1" aria-labelledby="deviceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="deviceForm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deviceModalLabel">设备信息</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="deviceId" name="deviceId">
+            <div class="mb-3">
+              <label for="name" class="form-label">名称</label>
+              <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+            <div class="mb-3">
+              <label for="type" class="form-label">类型</label>
+              <input type="text" class="form-control" id="type" name="type">
+            </div>
+            <div class="mb-3">
+              <label for="purchaseDate" class="form-label">购买日期</label>
+              <input type="date" class="form-control" id="purchaseDate" name="purchaseDate" required>
+            </div>
+            <div class="mb-3">
+              <label for="purchasePrice" class="form-label">购买价值</label>
+              <input type="number" class="form-control" id="purchasePrice" name="purchasePrice" required>
+            </div>
+            <div class="mb-3">
+              <label for="status" class="form-label">使用状态</label>
+              <select class="form-select" id="status" name="status">
+                <option value="在用">在用</option>
+                <option value="闲置">闲置</option>
+                <option value="已报废">已报废</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="notes" class="form-label">备注</label>
+              <textarea class="form-control" id="notes" name="notes"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">保存</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div layout:fragment="scripts">
+  <script>
+    let deviceModal;
+
+    $(function () {
+      deviceModal = new bootstrap.Modal(document.getElementById('deviceModal'));
+      loadDevices();
+
+      $('#btnAdd').click(function () {
+        $('#deviceForm')[0].reset();
+        $('#deviceId').val('');
+        deviceModal.show();
+      });
+
+      $('#deviceForm').submit(function (e) {
+        e.preventDefault();
+        const formData = $(this).serializeArray();
+        const data = {};
+        formData.forEach(item => data[item.name] = item.value);
+
+        const url = data.deviceId ? '/devices/update' : '/devices/save';
+
+        $.ajax({
+          url: url,
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify(data),
+          success: function (res) {
+            if (res.code === '200') {
+              deviceModal.hide();
+              loadDevices();
+            } else {
+              alert("保存失败：" + res.msg);
+            }
+          }
+        });
+      });
+
+      $('#btnDeleteSelected').click(function () {
+        const selectedIds = $('input[name="select"]:checked').map(function () {
+          return $(this).val();
+        }).get();
+
+        if (selectedIds.length === 0) {
+          alert("请先选择要删除的设备！");
+          return;
+        }
+
+        if (confirm("确定要删除选中的设备吗？")) {
+          $.post("/devices/delete/" + selectedIds.join(","), function (res) {
+            if (res.code === '200') {
+              loadDevices();
+            } else {
+              alert("删除失败：" + res.msg);
+            }
+          });
+        }
+      });
+
+      // 全选功能（用事件委托给卡片里的checkbox）
+      $('#deviceCardList').on('change', 'input[name="select"]', function () {
+        const allChecked = $('input[name="select"]').length === $('input[name="select"]:checked').length;
+        $('#selectAll').prop('checked', allChecked);
+      });
+
+      // 顶部全选按钮
+      $(document).on('change', '#selectAll', function () {
+        $('input[name="select"]').prop('checked', $(this).is(':checked'));
+      });
+    });
+
+    function loadDevices() {
+      $.get("/devices/list", function (res) {
+        if (res.code === '200') {
+          const list = res.data || [];
+          let totalAsset = 0;
+          let totalDailyCost = 0;
+
+          const html = list.map(item => {
+            const dailyCost = parseFloat(item.dailyCost || 0);
+            const price = parseFloat(item.purchasePrice || 0);
+
+            totalAsset += price;
+            totalDailyCost += dailyCost;
+
+            return `
+          <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card shadow-sm rounded-sm" style="padding:12px; font-size: 0.875rem;">
+              <div class="d-flex align-items-start justify-content-between mb-1">
+                <div>
+                  <input type="checkbox" name="select" value="${item.deviceId}" id="chk_${item.deviceId}" class="form-check-input me-2" style="vertical-align: middle;">
+                  <label for="chk_${item.deviceId}" style="user-select:none; font-weight:600;">${item.name}</label>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary p-1" title="编辑" onclick='editDevice(${JSON.stringify(item)})'>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+                    <path d="M12.146.854a.5.5 0 0 1 .708 0l2.292 2.292a.5.5 0 0 1 0 .708l-9.793 9.793a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.793-9.793zM11.207 2L3 10.207V13h2.793L14 4.793 11.207 2z"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="mb-1"><strong>类型:</strong> ${item.type || '-'}</div>
+              <div class="mb-1"><strong>购买日:</strong> ${item.purchaseDate || '-'}</div>
+              <div class="mb-1"><strong>价值:</strong> ¥${price.toFixed(2)}</div>
+              <div class="mb-1"><strong>状态:</strong> ${item.status || '-'}</div>
+              <div class="mb-1"><strong>使用天数:</strong> ${item.usageDays || 0}</div>
+              <div><strong>日均成本:</strong> ¥${dailyCost.toFixed(2)}</div>
+            </div>
+          </div>
+        `;
+          });
+
+          $('#deviceCardList').html(html.join(''));
+          $('#totalAsset').text("总资产：¥" + totalAsset.toFixed(2));
+          $('#avgDailyCost').text("总体日均成本：¥" + totalDailyCost.toFixed(2));
+          $('#selectAll').prop('checked', false);
+        }
+      });
+    }
+
+
+    function editDevice(device) {
+      $('#deviceId').val(device.deviceId);
+      $('#name').val(device.name);
+      $('#type').val(device.type);
+      $('#purchaseDate').val(device.purchaseDate);
+      $('#purchasePrice').val(device.purchasePrice);
+      $('#status').val(device.status);
+      $('#notes').val(device.notes);
+      deviceModal.show();
+    }
+  </script>
+</div>
+
+</body>
+</html>

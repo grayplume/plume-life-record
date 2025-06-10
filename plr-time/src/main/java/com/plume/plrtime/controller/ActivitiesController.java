@@ -29,7 +29,7 @@ public class ActivitiesController {
         LambdaQueryWrapper<Activities> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(Activities::getUserId, loginUser.getUser().getUserId());
         List<Activities> list = activitiesService.list(lambdaQueryWrapper);
-        return Result.success();
+        return Result.success(list);
     }
 
     /**

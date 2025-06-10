@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import lombok.Data;
 
@@ -49,7 +51,7 @@ public class Devices {
     /**
      * 购买日期
      */
-    private Date purchaseDate;
+    private LocalDate purchaseDate;
 
     /**
      * 备注
@@ -59,10 +61,10 @@ public class Devices {
     /**
      * 创建时间
      */
-    private Date createdAt;
+    private LocalDateTime createdAt;
 
     /**
      * 更新时间
      */
-    private Date updatedAt;
+    private LocalDateTime updatedAt;
 }
