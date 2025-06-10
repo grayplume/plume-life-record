@@ -9,9 +9,21 @@
 <div layout:fragment="content">
   <div class="container mt-4">
 
-    <div class="mb-3">
-      <button class="btn btn-primary" id="btnAdd">新增设备</button>
-      <button class="btn btn-danger" id="btnDeleteSelected">删除选中</button>
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+      <div class="d-flex align-items-center flex-wrap gap-2">
+        <button class="btn btn-primary" onclick="addDevice()">新增</button>
+        <button class="btn btn-danger" onclick="deleteSelected()">删除</button>
+
+        <select class="form-select ms-2" id="sortField" style="width: auto;">
+          <option value="dailyCost">日均成本</option>
+          <option value="purchasePrice">购买价格</option>
+          <option value="purchaseDate">购买日期</option>
+          <option value="usageDays">使用天数</option>
+          <option value="name">名称</option>
+        </select>
+
+        <button class="btn btn-outline-secondary" id="sortOrderToggle">降序</button>
+      </div>
     </div>
 
     <div class="row my-3">
@@ -64,9 +76,8 @@
             <div class="mb-3">
               <label for="status" class="form-label">使用状态</label>
               <select class="form-select" id="status" name="status">
-                <option value="在用">在用</option>
-                <option value="闲置">闲置</option>
-                <option value="已报废">已报废</option>
+                <option value="正常">正常</option>
+                <option value="失效">失效</option>
               </select>
             </div>
             <div class="mb-3">
@@ -87,10 +98,25 @@
 <div layout:fragment="scripts">
   <script>
     let deviceModal;
+    let sortField = 'dailyCost';
+    let sortOrder = 'desc';
+
 
     $(function () {
       deviceModal = new bootstrap.Modal(document.getElementById('deviceModal'));
       loadDevices();
+
+      $('#sortField').change(function () {
+        sortField = $(this).val();
+        loadDevices();
+      });
+
+      $('#sortOrderToggle').click(function () {
+        sortOrder = sortOrder === 'desc' ? 'asc' : 'desc';
+        $(this).text(sortOrder === 'desc' ? '降序' : '升序');
+        loadDevices();
+      });
+
 
       $('#btnAdd').click(function () {
         $('#deviceForm')[0].reset();
@@ -156,7 +182,10 @@
     });
 
     function loadDevices() {
-      $.get("/devices/list", function (res) {
+      $.get("/devices/list", {
+        sortField: sortField,
+        sortOrder: sortOrder
+      }, function (res) {
         if (res.code === '200') {
           const list = res.data || [];
           let totalAsset = 0;
@@ -165,34 +194,49 @@
           const html = list.map(item => {
             const dailyCost = parseFloat(item.dailyCost || 0);
             const price = parseFloat(item.purchasePrice || 0);
+            const isValid = item.status === '正常';
 
-            totalAsset += price;
-            totalDailyCost += dailyCost;
+            // 累加资产和成本（仅限正常设备）
+            if (isValid) {
+              totalAsset += price;
+              totalDailyCost += dailyCost;
+            }
+
+            // 状态样式和数据展示控制
+            const usageHtml = `
+              <div style="flex: 0 0 calc(50% - 3px);"><strong>天数:</strong> ${isValid ? (item.usageDays || 0) : '-'}</div>
+              <div style="flex: 0 0 calc(50% - 3px);"><strong>日均:</strong> ${isValid ? ('¥' + dailyCost.toFixed(2)) : '-'}</div>
+            `;
+
+            const cardClass = isValid
+                    ? 'card shadow-sm rounded-sm'
+                    : 'card shadow-sm rounded-sm text-muted opacity-50';
 
             return `
-          <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-            <div class="card shadow-sm rounded-sm" style="padding:12px; font-size: 0.875rem;">
-              <div class="d-flex align-items-start justify-content-between mb-1">
-                <div>
-                  <input type="checkbox" name="select" value="${item.deviceId}" id="chk_${item.deviceId}" class="form-check-input me-2" style="vertical-align: middle;">
-                  <label for="chk_${item.deviceId}" style="user-select:none; font-weight:600;">${item.name}</label>
-                </div>
-                <button class="btn btn-sm btn-outline-secondary p-1" title="编辑" onclick='editDevice(${JSON.stringify(item)})'>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
-                    <path d="M12.146.854a.5.5 0 0 1 .708 0l2.292 2.292a.5.5 0 0 1 0 .708l-9.793 9.793a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.793-9.793zM11.207 2L3 10.207V13h2.793L14 4.793 11.207 2z"/>
-                  </svg>
-                </button>
-              </div>
+              <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="${cardClass}" style="padding:12px; font-size: 0.875rem;">
+                  <div class="d-flex align-items-start justify-content-between mb-2">
+                    <div>
+                      <input type="checkbox" name="select" value="${item.deviceId}" id="chk_${item.deviceId}" class="form-check-input me-2">
+                      <label for="chk_${item.deviceId}" style="user-select:none; font-weight:600;">${item.name}</label>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary p-1" title="编辑" onclick='editDevice(${JSON.stringify(item)})'>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+                        <path d="M12.146.854a.5.5 0 0 1 .708 0l2.292 2.292a.5.5 0 0 1 0 .708l-9.793 9.793a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.793-9.793zM11.207 2L3 10.207V13h2.793L14 4.793 11.207 2z"/>
+                      </svg>
+                    </button>
+                  </div>
 
-              <div class="mb-1"><strong>类型:</strong> ${item.type || '-'}</div>
-              <div class="mb-1"><strong>购买日:</strong> ${item.purchaseDate || '-'}</div>
-              <div class="mb-1"><strong>价值:</strong> ¥${price.toFixed(2)}</div>
-              <div class="mb-1"><strong>状态:</strong> ${item.status || '-'}</div>
-              <div class="mb-1"><strong>使用天数:</strong> ${item.usageDays || 0}</div>
-              <div><strong>日均成本:</strong> ¥${dailyCost.toFixed(2)}</div>
-            </div>
-          </div>
-        `;
+                  <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <div style="flex: 0 0 calc(50% - 3px);"><strong>类型:</strong> ${item.type || '-'}</div>
+                    <div style="flex: 0 0 calc(50% - 3px);"><strong>状态:</strong> ${item.status || '-'}</div>
+                    ${usageHtml}
+                  </div>
+                  <div style="margin-top: 6px;"><strong>价格:</strong> ¥${price.toFixed(2)}</div>
+                  <div style="margin-top: 6px;"><strong>购买日期:</strong> ${item.purchaseDate || '-'}</div>
+                </div>
+              </div>
+            `;
           });
 
           $('#deviceCardList').html(html.join(''));

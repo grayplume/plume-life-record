@@ -11,7 +11,7 @@ create table devices
     user_id        int                                   not null comment '用户ID',
     name           varchar(100)                          not null comment '设备名称',
     type           varchar(50)                           not null comment '设备类型',
-    status         varchar(20) default '在用'            not null comment '使用状态（在用/闲置/已报废）',
+    status         varchar(20) default '正常'            not null comment '使用状态（正常/失效）',
     purchase_price decimal(10, 2)                        not null comment '购买价格',
     purchase_date  date                                  not null comment '购买日期',
     notes          text                                  null comment '备注',
