@@ -25,6 +25,13 @@
         <option value="">全部分类</option>
       </select>
     </label>
+
+    <button id="copyRankingBtn" class="btn btn-outline-secondary btn-sm">
+      复制数据
+    </button>
+
+
+
   </div>
 
   <!-- 每日活动排行榜 -->
@@ -90,6 +97,9 @@
       }).fail((_, __, error) => alert('分类请求错误: ' + error));
     }
 
+    // 存储当日排行榜
+    let cachedDailyRankingData = [];
+
     function loadActivityRanking() {
       const date = $('#dateInput').val();
       const categoryId = $('#categorySelect').val();
@@ -104,6 +114,7 @@
                 if (res.code === '200' || res.code === 0) {
                   const data = res.data || [];
                   console.log(data);
+                  cachedDailyRankingData = data;
 
                   const names = data.map(d => d.activityName);
                   const minutes = data.map(d => (d.totalDurationToday / 60).toFixed(0));
@@ -403,6 +414,35 @@
         monthChart.clear();
       });
     }
+
+    $('#copyRankingBtn').on('click', function () {
+      if (!cachedDailyRankingData || cachedDailyRankingData.length === 0) {
+        alert('没有排行榜数据可复制，请先加载排行榜。');
+        return;
+      }
+
+      const date = $('#dateInput').val();
+      const lines = [`📊 ${date} 当日活动排行榜：`, '', '| 活动名称 | 时长（h） |', '|:--|:--|'];
+
+      cachedDailyRankingData.forEach((item) => {
+        const durationMin = (item.totalDurationToday / 60 / 60).toFixed(1);
+        lines.push(`| ${item.activityName} | ${durationMin} |`);
+      });
+
+      const text = lines.join('\n');
+
+
+      // 复制到剪贴板
+      navigator.clipboard.writeText(text)
+              // .then(() => alert('已复制到剪贴板！'))
+              .then(() => showToast('已复制到剪贴板！'))
+              .catch(err => {
+                console.error('复制失败:', err);
+                // alert('复制失败，请检查浏览器权限');
+                showToast('复制失败，请检查浏览器权限')
+              });
+    });
+
 
     function loadAllCharts() {
       const date = $('#dateInput').val();
