@@ -205,6 +205,11 @@
         <div class="card">
 
             <div class="table-responsive">
+                <!-- 任务加载中占位符 -->
+                <div id="tasksLoadingPlaceholder" style="position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); text-align: center;">
+                    <div class="spinner-border text-secondary" style="width: 3rem; height: 3rem;" role="status"></div>
+                    <div class="loading-text" style="margin-top:12px; color:#6c757d; font-size:1rem;">正在加载任务列表...</div>
+                </div>
                 <table class="table" id="dataTable">
                     <thead>
                     <tr>
@@ -274,6 +279,9 @@
 
         function loadActivityList() {
             console.log("loadActivityList")
+            const loadingPlaceholder = $('#tasksLoadingPlaceholder');
+            loadingPlaceholder.show();    // 显示加载中
+
             $.get('/statistics/show', function (res) {
                 console.log(res);
                 if (res.code === '200') {
@@ -305,6 +313,7 @@
                     </tr>
                     `);
                     });
+                    loadingPlaceholder.hide();
                 }
             });
         }

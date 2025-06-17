@@ -5,9 +5,9 @@
 <head>
     <title>Activities Management</title>
     <style>
-         body {
-             background-color: #f1f3f5;
-         }
+        body {
+            background-color: #f1f3f5;
+        }
 
         h2 {
             text-align: center;
@@ -86,6 +86,42 @@
             padding: 6px 14px;
             font-size: 0.9rem;
         }
+
+        .active-timer-container {
+            display: inline-block;
+            padding: 2px 6px;
+            background-color: #e6f4ea;
+            color: #198754;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 2px;
+            line-height: 1.2;
+        }
+
+        #activitiesContainer {
+            min-height: 300px;
+            position: relative;
+        }
+
+        #loadingPlaceholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        #loadingPlaceholder .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        #loadingPlaceholder .loading-text {
+            margin-top: 12px;
+            color: #6c757d;
+            font-size: 1rem;
+        }
     </style>
 </head>
 
@@ -94,7 +130,11 @@
     <div class="container">
         <!-- <h2>活动时间管理</h2> -->
         <div class="row" id="activitiesContainer">
-            <!-- 卡片内容将被动态插入 -->
+            <!-- 加载中占位符 -->
+            <div id="loadingPlaceholder">
+                <div class="spinner-border text-secondary" role="status"></div>
+                <div class="loading-text">正在加载活动列表...</div>
+            </div>
         </div>
     </div>
 </div>
@@ -106,34 +146,39 @@
                 if (res.code === '200') {
                     const list = res.data;
                     const container = $('#activitiesContainer');
-                    container.empty();
+                    container.empty(); // 清空 loading 占位符
 
                     list.forEach(activity => {
                         const status = activity.status;
-
-                        // 状态样式类 + 文本
-                        let statusClass = '';
-                        let statusText = '';
-                        let btnClass = '';
-                        let btnText = '';
+                        let statusClass = '', statusText = '', btnClass = '', btnText = '';
 
                         if (status === 1) {
                             statusClass = 'status-ongoing';
                             statusText = '进行中';
-                            btnClass = 'btn-outline-success'; // 更柔和的绿色
+                            btnClass = 'btn-outline-success';
                             btnText = '结束';
                         } else if (status === 0) {
                             statusClass = 'status-ended';
                             statusText = '已结束';
-                            btnClass = 'btn-outline-secondary'; // 中性色
+                            btnClass = 'btn-outline-secondary';
                             btnText = '开始';
                         } else {
-                            statusClass = 'stat us-unknown';
+                            statusClass = 'status-unknown';
                             statusText = '未知';
-                            btnClass = 'btn-outline-dark'; // 灰黑色
+                            btnClass = 'btn-outline-dark';
                             btnText = '开始';
                         }
 
+                        let timerHtml = '';
+                        if (status === 1) {
+                            const updatedAt = new Date(activity.updatedAt).getTime();
+                            timerHtml = `
+                                <div class="active-timer-container active-timer"
+                                     id="timer-${activity.activityId}"
+                                     data-start="${updatedAt}">
+                                    <span id="timer-${activity.activityId}-text" class="timer-text">加载中...</span>
+                                </div>`;
+                        }
 
                         const html = `
                             <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
@@ -142,20 +187,41 @@
                                         <div class="status-bar ${statusClass}-bar">
                                             <div class="status-indicator"></div>
                                             <span>${statusText}</span>
+                                            <p>${timerHtml}</p>
                                         </div>
                                         <h5 class="card-title">${activity.activityName}</h5>
                                         <p class="card-text mb-1">时长：${Math.floor(activity.totalDuration / 60)}h ${activity.totalDuration % 60}m</p>
-                                        <button class="btn ${btnClass} mt-auto "
+                                        <button class="btn ${btnClass} mt-auto"
                                                 onclick="toggleTimer(event, ${activity.activityId}, ${activity.status})">
                                             ${btnText}
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
                         container.append(html);
+                        startActiveTimers();
                     });
                 }
+            });
+        }
+
+        function startActiveTimers() {
+            $('.active-timer').each(function () {
+                const el = $(this);
+                const startMs = parseInt(el.data('start'), 10);
+                const textEl = $(`#${el.attr('id')}-text`);
+
+                function update() {
+                    const now = Date.now();
+                    const elapsed = Math.floor((now - startMs) / 1000);
+                    const h = Math.floor(elapsed / 3600);
+                    const m = Math.floor((elapsed % 3600) / 60);
+                    const s = elapsed % 60;
+                    textEl.text(`${h}h ${m}m ${s}s`);
+                }
+
+                update();
+                setInterval(update, 1000);
             });
         }
 
@@ -184,9 +250,9 @@
         }
 
         function showToasts(msg, type) {
-            // alert(msg); // 你可以替换成更美观的提示组件
-            showToast(msg, type)
+            showToast(msg, type);
         }
+
         $(function () {
             loadActivityList();
         });
