@@ -63,7 +63,18 @@
       function loadTodos(parentId, $container) {
         $.get('/todo/list', { parentId }, function (res) {
           if (res.code === '200') {
-            const sorted = res.data.sort((a, b) => a.todoStatus === '已完成' ? 1 : -1);
+
+            const sorted = [...res.data].sort((a, b) => {
+              // 先按状态排序：未完成在前，已完成在后
+              if (a.todoStatus === '已完成' && b.todoStatus !== '已完成') return 1;
+              if (a.todoStatus !== '已完成' && b.todoStatus === '已完成') return -1;
+
+              // 同状态内按更新时间倒序
+              const timeA = new Date(a.updatedTime).getTime();
+              const timeB = new Date(b.updatedTime).getTime();
+              return timeB - timeA;
+            });
+
             $container.empty();
             sorted.forEach(todo => $container.append(createTodoItem(todo)));
           } else {
@@ -87,8 +98,8 @@
                   类型: ${todo.todoType || '无'} &nbsp;|&nbsp;
                   状态: ${todo.todoStatus || '未设置'} &nbsp;|&nbsp;
                   进度: ${todo.todoSchedule || '无'} &nbsp;|&nbsp;
-                  创建: ${formatTime(todo.createdTime)} &nbsp;|&nbsp;
-                  修改: ${formatTime(todo.updatedTime)}
+                  <!-- 创建: ${formatTime(todo.createdTime)} &nbsp;|&nbsp; -->
+                  更新: ${formatTime(todo.updatedTime)}
                 </div>
               </div>
             </div>
@@ -166,6 +177,13 @@
         $('#todoSchedule').val(todo.todoSchedule || '');
         $('#todoModalLabel').text(todo.todoId ? '编辑任务' : '新增任务');
         $('#todoModal').modal('show');
+
+        // 等模态框完全显示后再聚焦
+        $('#todoModal').on('shown.bs.modal', function () {
+          $('#todoName').trigger('focus');
+          // 只执行一次后移除绑定
+          $('#todoModal').off('shown.bs.modal');
+        });
       }
 
       $('#btnAddRoot').click(() => openTodoModal({ parentId: 0 }));
