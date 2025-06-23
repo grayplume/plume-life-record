@@ -3,181 +3,134 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layouts/default}" lang="zh">
 <head>
-  <title>模板</title>
+  <title>时间进度</title>
+  <style>
+    .progress {
+      height: 24px;
+    }
+    .progress-bar {
+      transition: width 0.5s ease-in-out;
+    }
+    .progress-label {
+      font-size: 0.9rem;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
 <div layout:fragment="content">
   <div class="container mt-5">
-    <h2 class="text-center mb-4">专注时间钟</h2>
-    <div class="text-center">
-      <h1 id="timer" class="display-4">90:00</h1>
-      <div class="btn-group mt-3">
-        <button id="startBtn" class="btn btn-success">开始</button>
-        <button id="pauseBtn" class="btn btn-warning">暂停</button>
-        <button id="resetBtn" class="btn btn-danger">重置</button>
+    <h2 class="text-center mb-5">时间进度展示</h2>
+
+    <div class="mb-4">
+      <h5>今年进度 <span id="yearProgressText" class="float-end progress-label"></span></h5>
+      <div class="progress">
+        <div id="yearProgress" class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar"></div>
       </div>
-      <p class="mt-3" id="statusText">状态：等待开始</p>
+    </div>
+
+    <div class="mb-4">
+      <h5>本月进度 <span id="monthProgressText" class="float-end progress-label"></span></h5>
+      <div class="progress">
+        <div id="monthProgress" class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar"></div>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <h5>本周进度 <span id="weekProgressText" class="float-end progress-label"></span></h5>
+      <div class="progress">
+        <div id="weekProgress" class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar"></div>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <h5>今日进度 <span id="dayProgressText" class="float-end progress-label"></span></h5>
+      <div class="progress">
+        <div id="dayProgress" class="progress-bar bg-danger progress-bar-striped progress-bar-animated" role="progressbar"></div>
+      </div>
     </div>
   </div>
-  <audio id="alertSound" src="/audio/rotary-phone-dial-being-rotated-1.mp3"></audio> <!-- 提示音，可替换路径 -->
-
 </div>
 
 <div layout:fragment="scripts">
   <script>
-    const focusDuration = 90 * 60;
-    const breakDuration = 20 * 60;
-
-    let remainingTime = focusDuration;
-    let timer = null;
-    let beepTimeout = null;
-    let isRunning = false;
-    let isBreak = false;
-
-    const timerDisplay = document.getElementById('timer');
-    const statusText = document.getElementById('statusText');
-    const alertSound = document.getElementById('alertSound');
-
-    const STORAGE_KEY = "timer-state";
-
-    document.getElementById('startBtn').addEventListener('click', () => {
-      try {
-        alertSound.play().then(() => alertSound.pause()); // 预热音频
-      } catch (e) {
-        console.warn("提示音预热失败", e);
-      }
-      startTimer();
-    });
-    document.getElementById('pauseBtn').addEventListener('click', pauseTimer);
-    document.getElementById('resetBtn').addEventListener('click', resetTimer);
-
-    document.addEventListener("DOMContentLoaded", () => {
-      initFromStorage();
-    });
-
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) initFromStorage();
-    });
-
-    function initFromStorage() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const state = JSON.parse(saved);
-        const elapsed = Math.floor((Date.now() - state.lastStart) / 1000);
-        remainingTime = Math.max((state.remaining - (state.running ? elapsed : 0)), 0);
-        isBreak = state.break;
-
-        updateDisplay();
-        updateTitle();
-
-        if (state.running && remainingTime > 0) {
-          isRunning = false;
-          startTimer();
-        } else {
-          isRunning = false;
-          statusText.textContent = isBreak ? '状态：休息中（已暂停）' : '状态：专注中（已暂停）';
-        }
-      }
+    function getProgress(current, total) {
+      return Math.min(100, (current / total * 100).toFixed(4));
     }
 
-    function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        remaining: remainingTime,
-        running: isRunning,
-        break: isBreak,
-        lastStart: Date.now()
-      }));
+    function updateProgressBars() {
+      const now = new Date();
+      const week = getISOWeekNumber(now);
+
+      // ==== 今年 ====
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
+      const totalYear = endOfYear - startOfYear;
+      const passedYear = now - startOfYear;
+      const yearProgress = getProgress(passedYear, totalYear);
+      const yearDays = Math.floor(passedYear / 86400000);
+      const yearTotalDays = Math.round(totalYear / 86400000);
+      setProgress("year", yearProgress, `${yearDays} / ${yearTotalDays} 天`);
+
+      // ==== 月 ====
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const totalMonth = endOfMonth - startOfMonth;
+      const passedMonth = now - startOfMonth;
+      const monthProgress = getProgress(passedMonth, totalMonth);
+      const monthDays = Math.floor(passedMonth / 86400000);
+      const monthTotalDays = Math.round(totalMonth / 86400000);
+      setProgress("month", monthProgress, `${monthDays} / ${monthTotalDays} 天`);
+
+      // ==== 周 ====
+      const weekday = now.getDay() || 7;
+      const startOfWeek = new Date(now);
+      startOfWeek.setHours(0, 0, 0, 0);
+      startOfWeek.setDate(now.getDate() - weekday + 1);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 7);
+      const weekTotal = endOfWeek - startOfWeek;
+      const weekPassed = now - startOfWeek;
+      const weekProgress = getProgress(weekPassed, weekTotal);
+      const weekHours = Math.floor(weekPassed / 3600000);
+      setProgress("week", weekProgress, `${weekHours} / 168 小时`);
+
+      // ==== 日 ====
+      const startOfDay = new Date(now);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(now);
+      endOfDay.setHours(24, 0, 0, 0);
+      const dayTotal = endOfDay - startOfDay;
+      const dayPassed = now - startOfDay;
+      const dayProgress = getProgress(dayPassed, dayTotal);
+      const h = now.getHours();
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const s = now.getSeconds().toString().padStart(2, '0');
+      setProgress("day", dayProgress, `W${week} ${h}:${m}:${s}`);
     }
 
-    function startTimer() {
-      if (isRunning) return;
-      isRunning = true;
-      statusText.textContent = isBreak ? '状态：休息中' : '状态：专注中';
-      saveState();
-      clearInterval(timer);
-      clearTimeout(beepTimeout);
-
-      timer = setInterval(() => {
-        if (remainingTime > 0) {
-          remainingTime--;
-          updateDisplay();
-          updateTitle();
-          saveState();
-        } else {
-          clearInterval(timer);
-          clearTimeout(beepTimeout);
-          isRunning = false;
-          if (!isBreak) {
-            isBreak = true;
-            remainingTime = breakDuration;
-            alert("✅ 90分钟到！请休息20分钟");
-            startTimer();
-          } else {
-            alert("⏰ 休息结束！可以重新开始了");
-            resetTimer();
-          }
-          saveState();
-        }
-      }, 1000);
-
-      scheduleOneRandomBeep();
+    function getISOWeekNumber(date) {
+      const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const dayNum = tmp.getUTCDay() || 7; // 周日变成 7
+      tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
+      return weekNo;
     }
 
-    function pauseTimer() {
-      isRunning = false;
-      clearInterval(timer);
-      clearTimeout(beepTimeout);
-      statusText.textContent = isBreak ? '状态：休息中（已暂停）' : '状态：专注中（已暂停）';
-      saveState();
+
+    function setProgress(id, percent, labelText) {
+      const bar = document.getElementById(id + "Progress");
+      const label = document.getElementById(id + "ProgressText");
+
+      bar.style.width = percent + "%";
+      bar.setAttribute("aria-valuenow", percent);
+      label.textContent = `${labelText}（${parseFloat(percent).toFixed(2)}%）`;
     }
 
-    function resetTimer() {
-      isRunning = false;
-      isBreak = false;
-      clearInterval(timer);
-      clearTimeout(beepTimeout);
-      remainingTime = focusDuration;
-      localStorage.removeItem(STORAGE_KEY);
-      updateDisplay();
-      updateTitle();
-      statusText.textContent = '状态：等待开始';
-    }
-
-    function updateDisplay() {
-      const minutes = String(Math.floor(remainingTime / 60)).padStart(2, '0');
-      const seconds = String(remainingTime % 60).padStart(2, '0');
-      timerDisplay.textContent = `${minutes}:${seconds}`;
-    }
-
-    function updateTitle() {
-      const minutes = Math.floor(remainingTime / 60);
-      const seconds = remainingTime % 60;
-      document.title = `${isBreak ? '休息中' : '专注中'} - ${minutes}:${seconds.toString().padStart(2, '0')}`;
-    }
-
-    function scheduleOneRandomBeep() {
-      if (!isRunning || isBreak) return;
-      const randomDelay = Math.floor(Math.random() * (5 * 60 * 1000)); // 0~5分钟内
-      beepTimeout = setTimeout(() => {
-        if (isRunning && !isBreak) {
-          alertSound.play().catch(err => console.log("提示音播放失败：", err));
-          const now = new Date();
-          const formatted = now.getFullYear() + '-' +
-                  String(now.getMonth() + 1).padStart(2, '0') + '-' +
-                  String(now.getDate()).padStart(2, '0') + ' ' +
-                  String(now.getHours()).padStart(2, '0') + ':' +
-                  String(now.getMinutes()).padStart(2, '0') + ':' +
-                  String(now.getSeconds()).padStart(2, '0');
-
-          console.log("🔔 随机提示音响起于：" + formatted);
-          // console.log("🔔 随机提示音响起");
-          // 注意：这次只响一次，不再递归调用
-        }
-      }, randomDelay);
-    }
+    updateProgressBars();
+    setInterval(updateProgressBars, 1000); // 每秒更新
   </script>
-
 </div>
-
 </body>
 </html>
