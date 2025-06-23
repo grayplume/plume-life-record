@@ -157,6 +157,13 @@
                 );
                 todo.todoStatus = newStatus;
               } else alert('更新状态失败');
+
+              // ✅ 播放完成音效
+              if (checked) {
+                const audio = new Audio('/audio/unlocking-1.mp3'); // 替换为你的音频路径
+                audio.play();
+              }
+
             }
           });
         });
