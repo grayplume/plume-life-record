@@ -118,10 +118,13 @@
 
                   const names = data.map(d => d.activityName);
                   const minutes = data.map(d => (d.totalDurationToday / 60).toFixed(0));
+                  const totalMinutes = minutes.reduce((a, b) => parseFloat(a) + parseFloat(b), 0);
+                  const hours_display = Math.floor(totalMinutes / 60);
+                  const minutes_display = totalMinutes % 60;
 
                   // 设置图表
                   rankingChart.setOption({
-                    title: { text: `当日时长排行榜（${date}） 单位：分钟` },
+                    title: { text: `当日时长排行榜（${date}） 总时长: ${hours_display}时${minutes_display}分钟` },
                     tooltip: {
                       trigger: 'axis',
                       formatter: params => {
