@@ -3,6 +3,8 @@ package com.plume.plrtime.service;
 import com.plume.plrtime.pojo.TodoList;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
 * @author plume
 * @description 针对表【todo_list(任务表)】的数据库操作Service
@@ -10,4 +12,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface TodoListService extends IService<TodoList> {
 
+    List<String> getDistinctTodoTypes();
+
+    List<String> getDistinctTodoStatuses();
 }

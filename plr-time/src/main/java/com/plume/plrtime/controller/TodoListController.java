@@ -1,7 +1,9 @@
 package com.plume.plrtime.controller;
 
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.plume.plrtime.common.Result;
 import com.plume.plrtime.pojo.TodoList;
 import com.plume.plrtime.pojo.vo.LoginUser;
@@ -10,7 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * TodoListController
@@ -29,16 +33,32 @@ public class TodoListController {
      * @return 任务列表
      */
     @GetMapping("/list")
-    public Result getTodoList(@RequestParam(required = false, defaultValue = "0") Integer parentId) {
+    public Result getTodoList(@RequestParam(required = false, defaultValue = "0") Integer parentId,
+                              @RequestParam(required = false, defaultValue = "") String todoType,
+                              @RequestParam(required = false, defaultValue = "")String todoStatus) {
         // 获取当前登录用户信息
         LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        QueryWrapper<TodoList> query = new QueryWrapper<>();
-        query.eq("user_id", loginUser.getUser().getUserId()).eq("parent_id", parentId);
+        LambdaQueryWrapper<TodoList> query = new LambdaQueryWrapper<>();
+        query.eq(TodoList::getUserId, loginUser.getUser().getUserId())
+                .eq(TodoList::getParentId, parentId)
+                .like(StringUtils.isNotBlank(todoType), TodoList::getTodoType, todoType)
+                .like(StringUtils.isNotBlank(todoStatus), TodoList::getTodoStatus, todoStatus)
+                .orderByDesc(TodoList::getUpdatedTime);
 
-        // 根据修改时间降序排序
-        query.orderByDesc("updated_time");
         return Result.success(todoService.list(query));
+    }
+
+    @GetMapping("/types-and-statuses")
+    public Result getTodoTypesAndStatuses() {
+        List<String> types = todoService.getDistinctTodoTypes();
+        List<String> statuses = todoService.getDistinctTodoStatuses();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("types", types);
+        data.put("statuses", statuses);
+
+        return Result.success(data);
     }
 
     /**

@@ -10,7 +10,19 @@
 <body>
 <div layout:fragment="content" class="container mt-4">
   <!-- <h2>任务列表</h2> -->
-  <button id="btnAddRoot" class="btn btn-primary mb-3">新增根任务</button>
+  <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+    <button id="btnAddRoot" class="btn btn-primary">新增任务</button>
+
+    <div>
+      <select id="filterType" class="form-select">
+      </select>
+    </div>
+
+    <div>
+      <select id="filterStatus" class="form-select">
+      </select>
+    </div>
+  </div>
   <ul id="todoListRoot" class="list-group"></ul>
 
   <!-- 任务模态框 -->
@@ -61,7 +73,10 @@
     $(function () {
       // 任务加载
       function loadTodos(parentId, $container) {
-        $.get('/todo/list', { parentId }, function (res) {
+        const todoType = $('#filterType').val();
+        const todoStatus = $('#filterStatus').val();
+
+        $.get('/todo/list', { parentId ,todoType, todoStatus}, function (res) {
           if (res.code === '200') {
 
             const sorted = [...res.data].sort((a, b) => {
@@ -141,7 +156,7 @@
 
         $li.find('.btn-toggle-complete').change(function () {
           const checked = $(this).is(':checked');
-          const newStatus = checked ? '已完成' : '未完成';
+          const newStatus = checked ? '已完成' : '进行中';
           const updatedTodo = { ...todo, todoStatus: newStatus };
 
           $.ajax({
@@ -222,6 +237,28 @@
       });
 
       loadTodos(0, $('#todoListRoot'));
+      $('#filterType, #filterStatus').change(function () {
+        loadTodos(0, $('#todoListRoot'));
+      });
+
+      $.get('/todo/types-and-statuses', function (res) {
+        if (res.code === '200') {
+          const { types, statuses } = res.data;
+
+          // 填充类型下拉框
+          $('#filterType').empty().append('<option value="">全部类型</option>');
+          types
+                  .filter(type => type) // 过滤掉 null 或空字符串
+                  .forEach(type => $('#filterType').append(`<option>${type}</option>`));
+
+          // 填充状态下拉框（默认“全部状态”）
+          $('#filterStatus').empty().append('<option value="">全部状态</option>');
+          statuses
+                  .filter(status => status) // 过滤掉 null 或 "" 的状态
+                  .forEach(status => $('#filterStatus').append(`<option>${status}</option>`));
+        }
+      });
+
     });
   </script>
 </div>
