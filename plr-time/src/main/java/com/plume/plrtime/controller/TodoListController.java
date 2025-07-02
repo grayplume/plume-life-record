@@ -81,6 +81,7 @@ public class TodoListController {
         // 获取当前登录用户信息
         LoginUser loginUser = (LoginUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         todo.setUserId(loginUser.getUser().getUserId());
+        todo.setTodoStatus("进行中");
         return Result.success(todoService.save(todo));
     }
 
