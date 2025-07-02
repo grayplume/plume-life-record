@@ -71,76 +71,117 @@
 <div layout:fragment="scripts">
   <script>
     $(function () {
-      // 任务加载
-      function loadTodos(parentId, $container) {
-        const todoType = $('#filterType').val();
-        const todoStatus = $('#filterStatus').val();
+      const $rootContainer = $('#todoListRoot');
+      const $filterType = $('#filterType');
+      const $filterStatus = $('#filterStatus');
+      const completeSound = new Audio('/audio/unlocking-1.mp3');
 
-        $.get('/todo/list', { parentId ,todoType, todoStatus}, function (res) {
-          if (res.code === '200') {
+      let lastFilter = {};
 
-            const sorted = [...res.data].sort((a, b) => {
-              // 先按状态排序：未完成在前，已完成在后
-              if (a.todoStatus === '已完成' && b.todoStatus !== '已完成') return 1;
-              if (a.todoStatus !== '已完成' && b.todoStatus === '已完成') return -1;
+      // 初始化
+      function init() {
+        loadTypesAndStatuses();
+        loadTodos(0, $rootContainer);
+        bindEvents();
+      }
 
-              // 同状态内按更新时间倒序
-              const timeA = new Date(a.updatedTime).getTime();
-              const timeB = new Date(b.updatedTime).getTime();
-              return timeB - timeA;
-            });
+      function bindEvents() {
+        $('#btnAddRoot').click(() => openTodoModal({ parentId: 0 }));
+        $('#filterType, #filterStatus').change(() => loadTodos(0, $rootContainer));
+        $('#todoForm').submit(handleSave);
+      }
 
-            $container.empty();
-            sorted.forEach(todo => $container.append(createTodoItem(todo)));
-          } else {
-            alert('加载任务失败');
+      function formatTime(str) {
+        return str ? str.substring(0, 16).replace('T', ' ') : '无';
+      }
+
+      function showError(msg) {
+        alert(msg); // 可替换为 Toastr 等更美观的提示
+      }
+
+      function playCompletionSound(isCompleted) {
+        if (isCompleted) {
+          completeSound.currentTime = 0;
+          completeSound.play();
+        }
+      }
+
+      function updateStatusDisplay(todo, newStatus, $li) {
+        $li.find('.text-muted.small').html(
+                `类型: ${todo.todoType || '无'} &nbsp;|&nbsp; 状态: ${newStatus} &nbsp;|&nbsp; 进度: ${todo.todoSchedule || '无'}`
+        );
+      }
+
+      function handleCompleteToggle($checkbox, todo, $li) {
+        const checked = $checkbox.is(':checked');
+        const newStatus = checked ? '已完成' : '进行中';
+        const updatedTodo = { ...todo, todoStatus: newStatus };
+
+        $.ajax({
+          url: '/todo/update',
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify(updatedTodo),
+          success: res => {
+            if (res.code === '200') {
+              $li.find('.todo-name').toggleClass('completed', checked);
+              updateStatusDisplay(todo, newStatus, $li);
+              todo.todoStatus = newStatus;
+            } else {
+              showError('更新状态失败');
+            }
+            playCompletionSound(checked);
           }
         });
       }
 
-      // 创建任务项
       function createTodoItem(todo) {
         const $li = $(`
-          <li class="list-group-item d-flex justify-content-between align-items-start flex-column flex-md-row" data-id="${todo.todoId}">
-            <div class="d-flex align-items-start">
-              <div>
-                <div>
-                  <strong class="todo-name ${todo.todoStatus === '已完成' ? 'text-decoration-line-through text-muted' : ''}">
-                    ${todo.todoName}
-                  </strong>
-                </div>
-                <div class="text-muted small">
-                  类型: ${todo.todoType || '无'} &nbsp;|&nbsp;
-                  状态: ${todo.todoStatus || '未设置'} &nbsp;|&nbsp;
-                  进度: ${todo.todoSchedule || '无'} &nbsp;|&nbsp;
-                  <!-- 创建: ${formatTime(todo.createdTime)} &nbsp;|&nbsp; -->
-                  更新: ${formatTime(todo.updatedTime)}
-                </div>
-              </div>
+      <li class="list-group-item d-flex justify-content-between align-items-start flex-column flex-md-row" data-id="${todo.todoId}">
+        <div class="d-flex align-items-start">
+          <div>
+            <div>
+              <strong class="todo-name ${todo.todoStatus === '已完成' ? 'completed' : ''}">
+                ${todo.todoName}
+              </strong>
             </div>
-            <div class="mt-2 mt-md-0 d-flex align-items-center flex-wrap gap-1">
-              <input type="checkbox" class="form-check-input btn-toggle-complete" style="transform: scale(1.4); margin: 2px;"
-                     ${todo.todoStatus === '已完成' ? 'checked' : ''}>
-              <button class="btn btn-sm btn-success btn-add-subtask" title="新增子任务">+</button>
-              <button class="btn btn-sm btn-warning btn-edit" title="编辑">✎</button>
-              <button class="btn btn-sm btn-danger btn-delete" title="删除">×</button>
+            <div class="text-muted small">
+              类型: ${todo.todoType || '无'} &nbsp;|&nbsp;
+              状态: ${todo.todoStatus || '进行中'} &nbsp;|&nbsp;
+              进度: ${todo.todoSchedule || '无'} &nbsp;|&nbsp;
+              更新: ${formatTime(todo.updatedTime)}
             </div>
-          </li>
-        `);
+          </div>
+        </div>
+        <div class="mt-2 mt-md-0 d-flex align-items-center flex-wrap gap-1">
+          <input type="checkbox" class="form-check-input btn-toggle-complete" style="transform: scale(1.4); margin: 2px;"
+                 ${todo.todoStatus === '已完成' ? 'checked' : ''}>
+          <button class="btn btn-sm btn-success btn-add-subtask" title="新增子任务">+</button>
+          <button class="btn btn-sm btn-warning btn-edit" title="编辑">✎</button>
+          <button class="btn btn-sm btn-danger btn-delete" title="删除">×</button>
+        </div>
+      </li>
+    `);
 
         const $subtaskUl = $('<ul class="list-group ms-4 mt-2 ps-3 border-start border-2 border-secondary-subtle" style="display:none;"></ul>');
 
-        // 展开/收起
         $li.find('.d-flex.align-items-start').click(e => {
           if ($(e.target).is('button') || $(e.target).closest('button').length) return;
-          $subtaskUl.is(':visible') ? $subtaskUl.slideUp() : ($subtaskUl.children().length || loadTodos(todo.todoId, $subtaskUl), $subtaskUl.slideDown());
+          if ($subtaskUl.children().length === 0) {
+            loadTodos(todo.todoId, $subtaskUl);
+          }
+          $subtaskUl.is(':visible') ? $subtaskUl.slideUp() : $subtaskUl.slideDown();
         });
 
         $li.find('.btn-add-subtask').click(() => openTodoModal({ parentId: todo.todoId }));
 
         $li.find('.btn-edit').click(() => {
           $.get(`/todo/${todo.todoId}`, res => {
-            res.code === '200' ? openTodoModal(res.data) : alert('获取任务详情失败');
+            if (res.code === '200') {
+              openTodoModal(res.data);
+            } else {
+              showError('获取任务详情失败');
+            }
           });
         });
 
@@ -149,45 +190,57 @@
             $.ajax({
               url: `/todo/delete/${todo.todoId}`,
               type: 'DELETE',
-              success: res => res.code === '200' ? loadTodos(0, $('#todoListRoot')) : alert('删除失败')
+              success: res => {
+                if (res.code === '200') {
+                  loadTodos(0, $rootContainer);
+                } else {
+                  showError('删除失败');
+                }
+              }
             });
           }
         });
 
         $li.find('.btn-toggle-complete').change(function () {
-          const checked = $(this).is(':checked');
-          const newStatus = checked ? '已完成' : '进行中';
-          const updatedTodo = { ...todo, todoStatus: newStatus };
-
-          $.ajax({
-            url: '/todo/update',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(updatedTodo),
-            success: res => {
-              if (res.code === '200') {
-                $li.find('.todo-name').toggleClass('text-decoration-line-through text-muted', checked);
-                $li.find('.text-muted.small').html(
-                        `类型: ${todo.todoType || '无'} &nbsp;|&nbsp; 状态: ${newStatus} &nbsp;|&nbsp; 进度: ${todo.todoSchedule || '无'}`
-                );
-                todo.todoStatus = newStatus;
-              } else alert('更新状态失败');
-
-              // ✅ 播放完成音效
-              if (checked) {
-                const audio = new Audio('/audio/unlocking-1.mp3'); // 替换为你的音频路径
-                audio.play();
-              }
-
-            }
-          });
+          handleCompleteToggle($(this), todo, $li);
         });
 
         return $li.add($subtaskUl);
       }
 
-      function formatTime(str) {
-        return str ? str.substring(0, 16).replace('T', ' ') : '无';
+      function loadTodos(parentId, $container) {
+        const isRoot = parentId === 0;
+        const todoType = isRoot ? $('#filterType').val() : null;
+        // const todoStatus = isRoot ? $('#filterStatus').val() : null;
+        const todoStatus = $filterStatus.val();
+
+        if (
+                lastFilter.parent === parentId &&
+                lastFilter.type === todoType &&
+                lastFilter.status === todoStatus
+        ) {
+          return;
+        }
+
+        lastFilter = { parent: parentId, type: todoType, status: todoStatus };
+
+        $.get('/todo/list', { parentId, todoType, todoStatus }, function (res) {
+          if (res.code === '200') {
+            const sorted = [...res.data].sort((a, b) => {
+              if (a.todoStatus === '已完成' && b.todoStatus !== '已完成') return 1;
+              if (a.todoStatus !== '已完成' && b.todoStatus === '已完成') return -1;
+
+              const timeA = new Date(a.updatedTime).getTime();
+              const timeB = new Date(b.updatedTime).getTime();
+              return timeB - timeA;
+            });
+
+            $container.empty();
+            sorted.forEach(todo => $container.append(createTodoItem(todo)));
+          } else {
+            showError('加载任务失败');
+          }
+        });
       }
 
       function openTodoModal(todo = {}) {
@@ -198,20 +251,18 @@
         $('#todoStatus').val(todo.todoStatus || '');
         $('#todoSchedule').val(todo.todoSchedule || '');
         $('#todoModalLabel').text(todo.todoId ? '编辑任务' : '新增任务');
-        $('#todoModal').modal('show');
 
-        // 等模态框完全显示后再聚焦
-        $('#todoModal').on('shown.bs.modal', function () {
-          $('#todoName').trigger('focus');
-          // 只执行一次后移除绑定
-          $('#todoModal').off('shown.bs.modal');
+        const $modal = $('#todoModal');
+        $modal.modal('show');
+
+        $modal.one('shown.bs.modal', function () {
+          $('#todoName').focus();
         });
       }
 
-      $('#btnAddRoot').click(() => openTodoModal({ parentId: 0 }));
-
-      $('#todoForm').submit(function (e) {
+      function handleSave(e) {
         e.preventDefault();
+
         const payload = {
           todoId: $('#todoId').val() ? parseInt($('#todoId').val()) : null,
           parentId: parseInt($('#parentId').val()),
@@ -220,6 +271,11 @@
           todoStatus: $('#todoStatus').val(),
           todoSchedule: $('#todoSchedule').val()
         };
+
+        if (!payload.todoName.trim()) {
+          showError('任务名称不能为空');
+          return false;
+        }
 
         const url = payload.todoId ? '/todo/update' : '/todo/save';
         $.ajax({
@@ -230,35 +286,29 @@
           success: res => {
             if (res.code === '200') {
               $('#todoModal').modal('hide');
-              loadTodos(0, $('#todoListRoot'));
-            } else alert('保存失败');
+              loadTodos(0, $rootContainer);
+            } else {
+              showError('保存失败');
+            }
           }
         });
-      });
+      }
 
-      loadTodos(0, $('#todoListRoot'));
-      $('#filterType, #filterStatus').change(function () {
-        loadTodos(0, $('#todoListRoot'));
-      });
+      function loadTypesAndStatuses() {
+        $.get('/todo/types-and-statuses', function (res) {
+          if (res.code === '200') {
+            const { types, statuses } = res.data;
 
-      $.get('/todo/types-and-statuses', function (res) {
-        if (res.code === '200') {
-          const { types, statuses } = res.data;
+            $filterType.empty().append('<option value="">全部类型</option>');
+            types.filter(Boolean).forEach(type => $filterType.append(`<option>${type}</option>`));
 
-          // 填充类型下拉框
-          $('#filterType').empty().append('<option value="">全部类型</option>');
-          types
-                  .filter(type => type) // 过滤掉 null 或空字符串
-                  .forEach(type => $('#filterType').append(`<option>${type}</option>`));
+            $filterStatus.empty().append('<option value="">全部状态</option>');
+            statuses.filter(Boolean).forEach(status => $filterStatus.append(`<option>${status}</option>`));
+          }
+        });
+      }
 
-          // 填充状态下拉框（默认“全部状态”）
-          $('#filterStatus').empty().append('<option value="">全部状态</option>');
-          statuses
-                  .filter(status => status) // 过滤掉 null 或 "" 的状态
-                  .forEach(status => $('#filterStatus').append(`<option>${status}</option>`));
-        }
-      });
-
+      init();
     });
   </script>
 </div>
